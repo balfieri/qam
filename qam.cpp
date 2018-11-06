@@ -5,11 +5,12 @@
 #include <cmath>
 #include <iostream>
 
-static constexpr uint32_t N_SQRT         = 4;
-static constexpr double   N_SQRT_F       = N_SQRT;
-static constexpr uint32_t N              = N_SQRT * N_SQRT;
-static constexpr uint32_t INIT_PHASE_CNT = 8;
-static constexpr double   PI_DIV_2       = M_PI / 2.0;
+static constexpr uint32_t N_SQRT             = 4;
+static constexpr double   N_SQRT_F           = N_SQRT;
+static constexpr uint32_t N                  = N_SQRT * N_SQRT;
+static constexpr uint32_t INIT_PHASE_CNT_LG2 = 3;
+static constexpr uint32_t INIT_PHASE_CNT     = 1 << INIT_PHASE_CNT_LG2;
+static constexpr double   PI_DIV_2           = M_PI / 2.0;
 
 int main( int argc, const char * argv[] )
 {
@@ -23,8 +24,9 @@ int main( int argc, const char * argv[] )
     {
         for( uint32_t j = 1; j < N_SQRT; j++ )
         {
-            uint32_t nom = (i / (INIT_PHASE_CNT * (1 << (j-1)))) % INIT_PHASE_CNT;
+            uint32_t nom = (i >> ((j-1)*INIT_PHASE_CNT_LG2)) & (INIT_PHASE_CNT - 1);
             init_phase[j] = M_PI/4.0 * double(nom)/double(INIT_PHASE_CNT);
+            std::cout << "init_phase[" << j << "]=" << init_phase[j] << " (nom=" << nom << ")\n";
         }
 
         // choose point locations
