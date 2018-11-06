@@ -1,6 +1,6 @@
 <p>
 This repository contains a C++ program that finds the optimal N-QAM points on the constellation diagram.  It uses brute force.
-The example defaults to 16-QAM, but you can change N_SQRT_ at the top of the program.
+The example defaults to 16-QAM, but you can change N_SQRT at the top of the program.
 </p>
 
 <p>
