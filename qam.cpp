@@ -19,6 +19,8 @@ int main( int argc, const char * argv[] )
     init_phase[0] = 0.0;  // can always fix first level
     const uint32_t init_phase_total_cnt = INIT_PHASE_CNT * (1 << N_SQRT);
     double best_min_dist = 0.0;
+    double x_best[N];
+    double y_best[N];
     double x[N];
     double y[N];
     std::cout << "init_phase_total_cnt=" << init_phase_total_cnt << "\n";
@@ -61,6 +63,11 @@ int main( int argc, const char * argv[] )
         if ( this_min_dist > best_min_dist ) {
             best_min_dist = this_min_dist;
             std::cout << "    new best_min_dist=" << best_min_dist << "\n";
+            for( k = 0; k < N; k++ )
+            {
+                x_best[k] = x[k];
+                y_best[k] = y[k];
+            }
         }
     }
 
@@ -68,7 +75,7 @@ int main( int argc, const char * argv[] )
     std::cout << "Points: xy=\n";
     for( uint32_t k = 0; k < N; k++ )
     {
-        std::cout << "    [" << x[k] << ", " << y[k] << "]\n";
+        std::cout << "    [" << x_best[k] << ", " << y_best[k] << "]\n";
     }
 
     return 0;
