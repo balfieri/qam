@@ -16,7 +16,7 @@ int main( int argc, const char * argv[] )
 {
     double init_phase[N_SQRT]; 
     init_phase[0] = 0.0;  // can always fix first level
-    uint32_t init_phase_total_cnt = INIT_PHASE_CNT * (1 << (N_SQRT - 1));
+    uint32_t init_phase_total_cnt = INIT_PHASE_CNT * (1 << N_SQRT);
     double best_min_dist = 0.0;
     double x[N];
     double y[N];
@@ -40,14 +40,15 @@ int main( int argc, const char * argv[] )
             for( uint32_t n = 0; this_min_dist > best_min_dist && n < N_SQRT; n++, k++, n += PI_DIV_2 )
             {
                 x[k] = a * std::cos( p );
-                y[k] = a * std::sin( -p );
-
+                y[k] = a * std::sin( p );
+                std::cout << "    xy[" << k << "," << a << "," << p << "]=[" << x[k] << "," << y[k] << "]\n";
                 if ( k != 0 ) {
                     for( uint32_t kk = 0; this_min_dist > best_min_dist && kk < k; k++ )
                     {
                         double x_diff = x[k] - x[kk];
                         double y_diff = y[k] - y[kk];
                         double dist = std::sqrt( x_diff*x_diff + y_diff*y_diff );
+                        std::cout << "    dist=" << dist << "\n";
                         if ( dist < this_min_dist ) this_min_dist = dist;
                     }
                 }
