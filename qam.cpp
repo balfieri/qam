@@ -101,7 +101,7 @@ int main( int argc, const char * argv[] )
     }
 
     std::cout << "\nBest minimum distance: " << best_min_dist << "\n";
-    std::cout << "Points: xy=\n";
+    std::cout << "Points on constellation diagram:\n";
     for( uint32_t k = 0; k < N; k++ )
     {
         std::cout << "    [" << x_best[k] << ", " << y_best[k] << "]\n";
