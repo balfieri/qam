@@ -8,8 +8,10 @@ N-QAM is more robust than one-dimensional multi-level signaling techniques such 
 </p>
 
 <p>
-This repository contains a C++ program that finds the optimal N-QAM points on the 2D constellation diagram.  It uses brute force.
-The example defaults to 16-QAM, but you can change N_SQRT at the top of the program.
+This repository contains a C++ program that finds the optimal N-QAM points on the 2D constellation diagram.  This means
+finding a set of N points that maximizes the minimum distance between any two points.  It uses brute force to do this.
+The example defaults to 16-QAM, but you can change N_SQRT at the top of the program.  It assumes that there are sqrt(N) 
+levels along each of the two dimensions.
 </p>
 
 <p>
