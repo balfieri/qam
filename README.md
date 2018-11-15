@@ -15,6 +15,10 @@ levels along each of the two dimensions.
 </p>
 
 <p>
+The next step is to show a simple C++ simulation of transmitting and receiving N-QAM.
+</p>
+
+<p>
 This is all open-source.  Refer to the LICENSE.md for licensing details.
 </p>
 
