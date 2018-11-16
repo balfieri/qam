@@ -32,8 +32,8 @@ static constexpr bool     debug              = false;
 // config constants
 static constexpr uint32_t N_SQRT             = 4;
 static constexpr double   CLK_GHZ            = 25;  // 25 GHz
-static constexpr uint32_t CLK_TIMESTEP_CNT   = 16;  // per clock
-static constexpr uint32_t SIM_CLK_CNT        = 256;
+static constexpr uint32_t CLK_TIMESTEP_CNT   = 32;  // per clock
+static constexpr uint32_t SIM_CLK_CNT        = 8;
 static constexpr double   mV_MAX             = 100; // 100 mV max per clock
 
 // derived constants
@@ -146,20 +146,30 @@ void sim( void )
     {
         //------------------------------------------------------
         // Choose random bits from 0 .. N-1.
-        // Then determine peak amplitude of I and Q clocks.
+        // Then determine peak amplitude and polarity of I and Q clocks.
         //------------------------------------------------------
         uint32_t bits = rand_n( N );
-        std::cout << "bits=" << std::bitset<N_SQRT>( bits ) << "\n";
         bool     I_pos = (bits & 1) != 0;
         bool     Q_pos = (bits & 2) != 0;
-        bool     I_mag = I_pos ? mV_MAX : -mV_MAX;
-        bool     Q_mag = Q_pos ? mV_MAX : -mV_MAX;
+        double   I_mag = I_pos ? mV_MAX : -mV_MAX;
+        double   Q_mag = Q_pos ? mV_MAX : -mV_MAX;
         if ( N == 16 && (bits & 4) != 0 ) I_mag /= 2.0;
         if ( N == 16 && (bits & 8) != 0 ) Q_mag /= 2.0;
 
         //------------------------------------------------------
-        // Choose random bits from 0 .. N-1.
-        // Then determine peak amplitude of I and Q clocks.
+        // Figure out I and Q voltage at each timestep.
+        // Let I be a sin() wave and Q be a cos() wave.
+        // We define a clock period as PI.
+        // Then sum them.  
         //------------------------------------------------------
+        std::cout << std::bitset<N_SQRT>( bits ) << " I_mag=" << I_mag << " Q_mag=" << Q_mag << ":\n";
+        for( uint32_t ts = 1; ts <= CLK_TIMESTEP_CNT; ts++ )
+        {
+            double a = double( ts ) * M_PI / double(CLK_TIMESTEP_CNT);
+            double I_mV = I_mag * sin( a );
+            double Q_mV = Q_mag * cos( a );
+            double IQ_mV = I_mV + Q_mV;
+            std::cout << "    " << I_mV << " + " << Q_mV << " = " << IQ_mV << "\n";
+        }
     }
 }
