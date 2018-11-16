@@ -24,18 +24,44 @@
 #include <string>
 #include <cmath>
 #include <iostream>
+#include <bitset>
 #include "stdlib.h"
 
 static constexpr bool     debug              = false;
+
+// config constants
 static constexpr uint32_t N_SQRT             = 4;
+static constexpr double   CLK_GHZ            = 25;  // 25 GHz
+static constexpr uint32_t CLK_TIMESTEP_CNT   = 16;  // per clock
+static constexpr uint32_t SIM_CLK_CNT        = 256;
+static constexpr double   mV_MAX             = 100; // 100 mV max per clock
+
+// derived constants
 static constexpr double   N_SQRT_F           = N_SQRT;
 static constexpr uint32_t N                  = N_SQRT * N_SQRT;
 static constexpr uint32_t INIT_PHASE_CNT_LG2 = 8;
 static constexpr uint32_t INIT_PHASE_CNT     = 1 << INIT_PHASE_CNT_LG2;
 static constexpr double   PI_DIV_2           = M_PI / 2.0;
 static constexpr double   EPSILON            = 1e-10;
+static constexpr double   CLK_PERIOD_PS      = 1000.0 / CLK_GHZ;
+static constexpr double   TIMESTEP_PS        = CLK_PERIOD_PS / double(CLK_TIMESTEP_CNT);
+
+// global variables
+static double x[N];
+static double y[N];
+
+// forward decls
+void choose_points( void );
+void sim( void );
 
 int main( int argc, const char * argv[] )
+{
+    //choose_points();
+    sim();
+    return 0;
+}
+
+void choose_points( void )
 {
     double init_phase[N_SQRT]; 
     init_phase[0] = 0.0;  // can always fix first level
@@ -48,8 +74,6 @@ int main( int argc, const char * argv[] )
     double best_min_dist = 0.0;
     double x_best[N];
     double y_best[N];
-    double x[N];
-    double y[N];
     if ( debug ) std::cout << "init_phase_total_cnt=" << init_phase_total_cnt << "\n";
     for( uint32_t i = 0; i < init_phase_total_cnt; i++ )
     {
@@ -106,6 +130,36 @@ int main( int argc, const char * argv[] )
     {
         std::cout << "    [" << x_best[k] << ", " << y_best[k] << "]\n";
     }
+}
 
-    return 0;
+uint32_t rand_n( uint32_t n )
+{
+    return rand() % n;
+}
+
+void sim( void )
+{
+    //------------------------------------------------------
+    // For each clock cycle
+    //------------------------------------------------------
+    for( uint32_t i = 0; i < SIM_CLK_CNT; i++ )
+    {
+        //------------------------------------------------------
+        // Choose random bits from 0 .. N-1.
+        // Then determine peak amplitude of I and Q clocks.
+        //------------------------------------------------------
+        uint32_t bits = rand_n( N );
+        std::cout << "bits=" << std::bitset<N_SQRT>( bits ) << "\n";
+        bool     I_pos = (bits & 1) != 0;
+        bool     Q_pos = (bits & 2) != 0;
+        bool     I_mag = I_pos ? mV_MAX : -mV_MAX;
+        bool     Q_mag = Q_pos ? mV_MAX : -mV_MAX;
+        if ( N == 16 && (bits & 4) != 0 ) I_mag /= 2.0;
+        if ( N == 16 && (bits & 8) != 0 ) Q_mag /= 2.0;
+
+        //------------------------------------------------------
+        // Choose random bits from 0 .. N-1.
+        // Then determine peak amplitude of I and Q clocks.
+        //------------------------------------------------------
+    }
 }
