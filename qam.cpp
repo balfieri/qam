@@ -18,7 +18,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 //
-// qam.c - brute-force find optimal constellation diagram for N-QAM with largest minimum distance between any two points
+// qam.c - simulate N-QAM (N = 4 or 16 currently)
 //
 #include <cstdint>
 #include <string>
@@ -30,10 +30,10 @@
 static constexpr bool     debug              = false;
 
 // config constants
-static constexpr uint32_t N_SQRT             = 4;
+static constexpr uint32_t N_SQRT             = 4;   // sqrt(N)
 static constexpr double   CLK_GHZ            = 25;  // 25 GHz
 static constexpr uint32_t CLK_TIMESTEP_CNT   = 32;  // per clock
-static constexpr uint32_t SIM_CLK_CNT        = 8;
+static constexpr uint32_t SIM_CLK_CNT        = 32;
 static constexpr double   mV_MAX             = 100; // 100 mV max per clock
 
 // derived constants
@@ -61,8 +61,15 @@ int main( int argc, const char * argv[] )
     return 0;
 }
 
+// IGNORE THIS ROUTINE - may come back to it later
+//
 void choose_points( void )
 {
+    //------------------------------------------------------
+    // Choose optimal points on constellation diagram
+    // that maximize minimum distance.  This may not
+    // be necessary as we may know them a priori already.
+    //------------------------------------------------------
     double init_phase[N_SQRT]; 
     init_phase[0] = 0.0;  // can always fix first level
     uint32_t init_phase_total_cnt = 1;
@@ -142,6 +149,7 @@ void sim( void )
     //------------------------------------------------------
     // For each clock cycle
     //------------------------------------------------------
+    double Q_mag_prev = mV_MAX;
     for( uint32_t i = 0; i < SIM_CLK_CNT; i++ )
     {
         //------------------------------------------------------
@@ -153,8 +161,8 @@ void sim( void )
         bool     Q_pos = (bits & 2) != 0;
         double   I_mag = I_pos ? mV_MAX : -mV_MAX;
         double   Q_mag = Q_pos ? mV_MAX : -mV_MAX;
-        if ( N == 16 && (bits & 4) != 0 ) I_mag /= 2.0;
-        if ( N == 16 && (bits & 8) != 0 ) Q_mag /= 2.0;
+        if ( N == 16 && (bits & 4) == 0 ) I_mag /= 2.0;
+        if ( N == 16 && (bits & 8) == 0 ) Q_mag /= 2.0;
 
         //------------------------------------------------------
         // Figure out I and Q voltage at each timestep.
@@ -167,9 +175,14 @@ void sim( void )
         {
             double a = double( ts ) * M_PI / double(CLK_TIMESTEP_CNT);
             double I_mV = I_mag * sin( a );
-            double Q_mV = Q_mag * cos( a );
+            double Q_mag2 = (ts <= CLK_TIMESTEP_CNT/2) ? Q_mag_prev : -Q_mag;
+            double Q_mV = Q_mag2 * cos( a );
             double IQ_mV = I_mV + Q_mV;
-            std::cout << "    " << I_mV << " + " << Q_mV << " = " << IQ_mV << "\n";
+            std::string clk_str = (ts == (CLK_TIMESTEP_CNT/2)) ? "  <---- I_clk samples here" :
+                                  (ts == CLK_TIMESTEP_CNT)     ? "  <---- Q_clk samples here" : "";
+            std::cout << "    " << I_mV << " + " << Q_mV << " = " << IQ_mV << clk_str << "\n";
         }
+
+        Q_mag_prev = Q_mag;
     }
 }
