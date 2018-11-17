@@ -32,7 +32,7 @@ static constexpr bool     debug              = false;
 // config constants
 static constexpr uint32_t N_SQRT             = 4;   // sqrt(N)
 static constexpr double   CLK_GHZ            = 25;  // 25 GHz
-static constexpr uint32_t CLK_TIMESTEP_CNT   = 32;  // per clock
+static constexpr uint32_t CLK_TIMESTEP_CNT   = 64;  // per clock
 static constexpr uint32_t SIM_CLK_CNT        = 32;
 static constexpr double   mV_MAX             = 100; // 100 mV max per clock
 
@@ -161,8 +161,8 @@ void sim( void )
         bool     Q_pos = (bits & 2) != 0;
         double   I_mag = I_pos ? mV_MAX : -mV_MAX;
         double   Q_mag = Q_pos ? mV_MAX : -mV_MAX;
-        if ( N == 16 && (bits & 4) == 0 ) I_mag /= 2.0;
-        if ( N == 16 && (bits & 8) == 0 ) Q_mag /= 2.0;
+        if ( N == 16 && (bits & 4) == 0 ) I_mag /= 3.0;
+        if ( N == 16 && (bits & 8) == 0 ) Q_mag /= 3.0;
 
         //------------------------------------------------------
         // Figure out I and Q voltage at each timestep.
