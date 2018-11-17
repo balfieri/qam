@@ -206,6 +206,6 @@ void sim( void )
         Q_mag_prev = Q_mag;
     }
     double eye_width_ps_avg = eye_width_ps_tot / double(SIM_CLK_CNT);
-    std::cout << "\neye_width min..max=" << eye_width_ps_min << " ps .. " << eye_width_ps_max << " ps\n";
-    std::cout << "\neye_width avg     =" << eye_width_ps_avg << " ps\n";
+    std::cout << "\neye_width min..max = " << eye_width_ps_min << " ps .. " << eye_width_ps_max << " ps\n";
+    std::cout << "\neye_width avg      = " << eye_width_ps_avg << " ps\n";
 }
