@@ -33,7 +33,7 @@ static constexpr bool     debug              = false;
 static constexpr uint32_t N_SQRT             = 4;   // sqrt(N)
 static constexpr double   CLK_GHZ            = 25;  // 25 GHz
 static constexpr uint32_t CLK_TIMESTEP_CNT   = 64;  // per clock
-static constexpr uint32_t SIM_CLK_CNT        = 32;
+static constexpr uint32_t SIM_CLK_CNT        = 1024;
 static constexpr double   mV_MAX             = 100; // 100 mV max per clock
 
 // derived constants
@@ -149,7 +149,11 @@ void sim( void )
     //------------------------------------------------------
     // For each clock cycle
     //------------------------------------------------------
+    const double I_inc = (N == 16) ? (mV_MAX / 3.0) : mV_MAX;
     double Q_mag_prev = mV_MAX;
+    double eye_width_ps_min = 1000000.0;
+    double eye_width_ps_max = 0.0;
+    double eye_width_ps_tot = 0.0;
     for( uint32_t i = 0; i < SIM_CLK_CNT; i++ )
     {
         //------------------------------------------------------
@@ -164,6 +168,9 @@ void sim( void )
         if ( N == 16 && (bits & 4) == 0 ) I_mag /= 3.0;
         if ( N == 16 && (bits & 8) == 0 ) Q_mag /= 3.0;
 
+        double   I_min = (I_mag == -mV_MAX) ? -1000000.0 : (I_mag-I_inc);
+        double   I_max = (I_mag ==  mV_MAX) ?  1000000.0 : (I_mag+I_inc);
+
         //------------------------------------------------------
         // Figure out I and Q voltage at each timestep.
         // Let I be a sin() wave and Q be a cos() wave.
@@ -171,6 +178,8 @@ void sim( void )
         // Then sum them.  
         //------------------------------------------------------
         std::cout << std::bitset<N_SQRT>( bits ) << " I_mag=" << I_mag << " Q_mag=" << Q_mag << ":\n";
+        uint32_t I_ts_eye_cnt = 0;
+        uint32_t I_ts_eye_cnt_max = 0;
         for( uint32_t ts = 1; ts <= CLK_TIMESTEP_CNT; ts++ )
         {
             double a = double( ts ) * M_PI / double(CLK_TIMESTEP_CNT);
@@ -178,11 +187,25 @@ void sim( void )
             double Q_mag2 = (ts <= CLK_TIMESTEP_CNT/2) ? Q_mag_prev : -Q_mag;
             double Q_mV = Q_mag2 * cos( a );
             double IQ_mV = I_mV + Q_mV;
+            bool   in_eye = IQ_mV > I_min && IQ_mV < I_max;
+            if ( in_eye ) {
+                I_ts_eye_cnt++;
+                if ( I_ts_eye_cnt > I_ts_eye_cnt_max ) I_ts_eye_cnt_max = I_ts_eye_cnt;
+            } else {
+                I_ts_eye_cnt = 0;
+            }
             std::string clk_str = (ts == (CLK_TIMESTEP_CNT/2)) ? "  <---- I_clk samples here" :
                                   (ts == CLK_TIMESTEP_CNT)     ? "  <---- Q_clk samples here" : "";
-            std::cout << "    " << I_mV << " + " << Q_mV << " = " << IQ_mV << clk_str << "\n";
+            std::cout << (in_eye ? "*" : " ") << "   " << I_mV << " + " << Q_mV << " = " << IQ_mV << clk_str << "\n";
         }
-
+        double eye_width_ps = double(I_ts_eye_cnt_max) * TIMESTEP_PS;
+        std::cout << "    eye_width=" << eye_width_ps << " ps\n";
+        if ( eye_width_ps < eye_width_ps_min ) eye_width_ps_min = eye_width_ps;
+        if ( eye_width_ps > eye_width_ps_max ) eye_width_ps_max = eye_width_ps;
+        eye_width_ps_tot += eye_width_ps;
         Q_mag_prev = Q_mag;
     }
+    double eye_width_ps_avg = eye_width_ps_tot / double(SIM_CLK_CNT);
+    std::cout << "\neye_width min..max=" << eye_width_ps_min << " ps .. " << eye_width_ps_max << " ps\n";
+    std::cout << "\neye_width avg     =" << eye_width_ps_avg << " ps\n";
 }
