@@ -45,6 +45,8 @@ static constexpr double   PI_DIV_2           = M_PI / 2.0;
 static constexpr double   EPSILON            = 1e-10;
 static constexpr double   CLK_PERIOD_PS      = 1000.0 / CLK_GHZ;
 static constexpr double   TIMESTEP_PS        = CLK_PERIOD_PS / double(CLK_TIMESTEP_CNT);
+static constexpr double   mV_MID             = mV_MAX / 3.0;
+static constexpr double   mV_INC             = mV_MID;
 
 // global variables
 static double x[N];
@@ -70,8 +72,7 @@ void choose_points( void )
     // that maximize minimum distance.  This may not
     // be necessary as we may know them a priori already.
     //------------------------------------------------------
-    double init_phase[N_SQRT]; 
-    init_phase[0] = 0.0;  // can always fix first level
+    double init_phase[N_SQRT]; init_phase[0] = 0.0;  // can always fix first level
     uint32_t init_phase_total_cnt = 1;
     for( uint32_t i = 1; i < N_SQRT; i++ )
     {
@@ -149,7 +150,6 @@ void sim( void )
     //------------------------------------------------------
     // For each clock cycle
     //------------------------------------------------------
-    const double I_inc = (N == 16) ? (mV_MAX / 3.0) : mV_MAX;
     double Q_mag_prev = mV_MAX;
     double eye_width_ps_min = 1000000.0;
     double eye_width_ps_max = 0.0;
@@ -163,13 +163,20 @@ void sim( void )
         uint32_t bits = rand_n( N );
         bool     I_pos = (bits & 1) != 0;
         bool     Q_pos = (bits & 2) != 0;
-        double   I_mag = I_pos ? mV_MAX : -mV_MAX;
-        double   Q_mag = Q_pos ? mV_MAX : -mV_MAX;
-        if ( N == 16 && (bits & 4) == 0 ) I_mag /= 3.0;
-        if ( N == 16 && (bits & 8) == 0 ) Q_mag /= 3.0;
-
-        double   I_min = (I_mag == -mV_MAX) ? -1000000.0 : (I_mag-I_inc);
-        double   I_max = (I_mag ==  mV_MAX) ?  1000000.0 : (I_mag+I_inc);
+        double   I_mag;
+        double   Q_mag;
+        if ( N == 16 && (bits & 4) == 0 ) {
+            I_mag = I_pos ? mV_MID : -mV_MID;
+        } else {
+            I_mag = I_pos ? mV_MAX : -mV_MAX;
+        }
+        if ( N == 16 && (bits & 8) == 0 ) {
+            Q_mag = Q_pos ? mV_MID : -mV_MID;
+        } else {
+            Q_mag = Q_pos ? mV_MAX : -mV_MAX;
+        }
+        double   I_min = (I_mag == -mV_MAX) ? -1000000.0 : (I_mag-mV_INC);
+        double   I_max = (I_mag ==  mV_MAX) ?  1000000.0 : (I_mag+mV_INC);
 
         //------------------------------------------------------
         // Figure out I and Q voltage at each timestep.
