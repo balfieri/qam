@@ -35,6 +35,7 @@ static constexpr double   CLK_GHZ            = 10;  // 10 GHz
 static constexpr uint32_t CLK_TIMESTEP_CNT   = 64;  // per clock
 static constexpr uint32_t SIM_CLK_CNT        = 8;
 static constexpr double   mV_MAX             = 200; // 200 mV max per clock
+static constexpr double   CLIP_RATIO         = 1.2; // clip sin/cos peaks by this amount
 
 // derived constants
 static constexpr double   N_SQRT_F           = N_SQRT;
@@ -113,9 +114,11 @@ void sim( void )
         for( uint32_t ts = 1; ts <= CLK_TIMESTEP_CNT; ts++ )
         {
             double a = double( ts ) * M_PI / double(CLK_TIMESTEP_CNT);
-            double I_mV = I_mag * sin( a );
+            double I_mV = I_mag * CLIP_RATIO * sin( a );
             double Q_mag2 = (ts <= CLK_TIMESTEP_CNT/2) ? Q_mag_prev : -Q_mag;
             double Q_mV = Q_mag2 * cos( a );
+            if ( (I_mag  < 0.0 && I_mV < I_mag)  || (I_mag  > 0.0 && I_mV > I_mag) )  I_mV = I_mag;
+            if ( (Q_mag2 < 0.0 && Q_mV < Q_mag2) || (Q_mag2 > 0.0 && Q_mV > Q_mag2) ) Q_mV = Q_mag2;
             double IQ_mV = I_mV + Q_mV;
             bool   in_eye = IQ_mV > I_min && IQ_mV < I_max;
             if ( in_eye ) {

@@ -6,7 +6,8 @@
 use strict;
 use warnings;
 
-my $sp_base = shift @ARGV || "qam";
+my $out_base = shift @ARGV || "qam";
+my $sp_base  = shift @ARGV || $out_base;
 
 my $I_s  = "VI I_clk 0 PWL ( 0p 0m";
 my $Q_s  = "VQ Q_clk 0 PWL ( 0p 0m";
