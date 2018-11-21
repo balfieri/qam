@@ -36,6 +36,8 @@ static constexpr uint32_t CLK_TIMESTEP_CNT   = 50;  // per clock
 static constexpr uint32_t SIM_CLK_CNT        = 8;
 static constexpr double   mV_MAX             = 200; // 200 mV max per clock
 static constexpr bool     USE_SIN_COS        = true; 
+static constexpr double   TRANS_START_FRAC   = 0.20; // fraction of half-clock where transition starts
+static constexpr double   TRANS_END_FRAC     = 0.30; // fraction of half-clock where transition ends
 
 // derived constants
 static constexpr double   N_SQRT_F           = N_SQRT;
@@ -46,6 +48,10 @@ static constexpr double   PI_DIV_2           = M_PI / 2.0;
 static constexpr double   EPSILON            = 1e-10;
 static constexpr double   CLK_PERIOD_PS      = 1000.0 / CLK_GHZ;
 static constexpr double   TIMESTEP_PS        = CLK_PERIOD_PS / double(CLK_TIMESTEP_CNT);
+static constexpr double   RISING_START_PS    = CLK_PERIOD_PS/2.0 * TRANS_START_FRAC;
+static constexpr double   RISING_END_PS      = CLK_PERIOD_PS/2.0 * TRANS_END_FRAC;
+static constexpr double   FALLING_START_PS   = CLK_PERIOD_PS/2.0 * (1.0-TRANS_END_FRAC);
+static constexpr double   FALLING_END_PS     = CLK_PERIOD_PS/2.0 * (1.0-TRANS_START_FRAC);
 static constexpr double   mV_MID             = mV_MAX / 3.0;
 static constexpr double   mV_INC             = mV_MID;
 
@@ -120,9 +126,26 @@ void sim( void )
                 double Q_mgg = (ts <= CLK_TIMESTEP_CNT/2) ? Q_mag_prev : -Q_mag;
                 Q_mV = Q_mgg * cos( a );
             } else {
-                if ( ts <= CLK_TIMESTEP_CNT/2 ) {
-                } else {
+                //------------------------------------------------------
+                // Sharp Edges
+                //------------------------------------------------------
+                bool I_rising = ts <= CLK_TIMESTEP_CNT/2;
+                double rising_to    = I_rising ? I_mag      : Q_mag;  
+                double falling_from = I_rising ? Q_mag_prev : I_mag;
+                double rising_mV    = 0.0;
+                double falling_mV   = falling_from;
+                if ( ts >= RISING_END_PS ) {
+                    rising_mV = rising_to;
+                } else if ( ts >= RISING_START_PS ) {
+                    rising_mV = (ts-RISING_START_PS)/(RISING_END_PS-RISING_START_PS) * rising_to;
                 }
+                if ( ts >= FALLING_END_PS ) {
+                    falling_mV = 0.0;
+                } else if ( ts >= FALLING_START_PS ) {
+                    falling_mV = (1.0 - (ts-FALLING_START_PS)/(FALLING_END_PS-FALLING_START_PS)) * falling_from;
+                }
+                I_mV = I_rising ? rising_mV  : falling_mV;
+                Q_mV = I_rising ? falling_mV : rising_mV;
             }
 
             double IQ_mV = I_mV + Q_mV;
