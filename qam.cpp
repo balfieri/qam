@@ -33,7 +33,7 @@ static constexpr bool     debug              = false;
 static constexpr uint32_t N_SQRT             = 4;   // sqrt(N)
 static constexpr double   CLK_GHZ            = 10;  // 10 GHz
 static constexpr uint32_t CLK_TIMESTEP_CNT   = 64;  // per clock
-static constexpr uint32_t SIM_CLK_CNT        = 1024;
+static constexpr uint32_t SIM_CLK_CNT        = 256;
 static constexpr double   mV_MAX             = 200; // 200 mV max per clock
 
 // derived constants

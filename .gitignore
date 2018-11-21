@@ -1,3 +1,6 @@
 qam
 qam.o
 *.out
+*.sp
+*.raw
+*.eps
