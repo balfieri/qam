@@ -53,6 +53,7 @@ $IQ_s
 .control
 run
 hardcopy ${sp_base}.eps v(I_clk) v(Q_clk) v(IQ_clk)
+hardcopy ${sp_base}.InQ.eps v(I_clk) v(Q_clk)
 hardcopy ${sp_base}.I.eps v(I_clk) 
 hardcopy ${sp_base}.Q.eps v(Q_clk) 
 hardcopy ${sp_base}.IQ.eps v(IQ_clk) 

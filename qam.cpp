@@ -36,8 +36,8 @@ static constexpr uint32_t CLK_TIMESTEP_CNT   = 50;  // per clock
 static constexpr uint32_t SIM_CLK_CNT        = 8;
 static constexpr double   mV_MAX             = 200; // 200 mV max per clock
 static constexpr bool     USE_SIN_COS        = false; 
-static constexpr double   TRANS_START_FRAC   = 0.20; // fraction of half-clock where transition starts
-static constexpr double   TRANS_END_FRAC     = 0.30; // fraction of half-clock where transition ends
+static constexpr double   TRANS_START_FRAC   = 0.40; // fraction of half-clock where transition starts
+static constexpr double   TRANS_END_FRAC     = 0.60; // fraction of half-clock where transition ends
 
 // derived constants
 static constexpr double   N_SQRT_F           = N_SQRT;
@@ -79,7 +79,12 @@ void sim( void )
     //------------------------------------------------------
     // For each clock cycle
     //------------------------------------------------------
-    std::cout << "TIMESTEP_PS=" << TIMESTEP_PS << "\n\n";
+    std::cout << "TIMESTEP_PS=" << TIMESTEP_PS << "\n";
+    std::cout << "RISING_START_PS=" << RISING_START_PS << "\n";
+    std::cout << "RISING_END_PS=" << RISING_END_PS << "\n";
+    std::cout << "FALLING_START_PS=" << FALLING_START_PS << "\n";
+    std::cout << "FALLING_END_PS=" << FALLING_END_PS << "\n";
+    std::cout << "\n";
     double Q_mag_prev = mV_MAX;
     double eye_width_ps_min = 1000000.0;
     double eye_width_ps_max = 0.0;
