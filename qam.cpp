@@ -33,7 +33,7 @@ static constexpr bool     debug              = false;
 static constexpr uint32_t N_SQRT             = 4;   // sqrt(N)
 static constexpr double   CLK_GHZ            = 10;  // 10 GHz
 static constexpr uint32_t CLK_TIMESTEP_CNT   = 64;  // per clock
-static constexpr uint32_t SIM_CLK_CNT        = 256;
+static constexpr uint32_t SIM_CLK_CNT        = 50;
 static constexpr double   mV_MAX             = 200; // 200 mV max per clock
 
 // derived constants
@@ -184,7 +184,7 @@ void sim( void )
         // We define a clock period as PI.
         // Then sum them.  
         //------------------------------------------------------
-        std::cout << std::bitset<N_SQRT>( bits ) << " I_mag=" << I_mag << " Q_mag=" << Q_mag << ":\n";
+        std::cout << i << ": " << std::bitset<N_SQRT>( bits ) << " I_mag=" << I_mag << " Q_mag=" << Q_mag << ":\n";
         uint32_t I_ts_eye_cnt = 0;
         uint32_t I_ts_eye_cnt_max = 0;
         for( uint32_t ts = 1; ts <= CLK_TIMESTEP_CNT; ts++ )
