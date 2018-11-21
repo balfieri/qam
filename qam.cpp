@@ -33,7 +33,7 @@ static constexpr bool     debug              = false;
 static constexpr uint32_t N_SQRT             = 4;   // sqrt(N)
 static constexpr double   CLK_GHZ            = 10;  // 10 GHz
 static constexpr uint32_t CLK_TIMESTEP_CNT   = 64;  // per clock
-static constexpr uint32_t SIM_CLK_CNT        = 50;
+static constexpr uint32_t SIM_CLK_CNT        = 8;
 static constexpr double   mV_MAX             = 200; // 200 mV max per clock
 
 // derived constants
@@ -58,86 +58,8 @@ void sim( void );
 
 int main( int argc, const char * argv[] )
 {
-    //choose_points();
     sim();
     return 0;
-}
-
-// IGNORE THIS ROUTINE - may come back to it later
-//
-void choose_points( void )
-{
-    //------------------------------------------------------
-    // Choose optimal points on constellation diagram
-    // that maximize minimum distance.  This may not
-    // be necessary as we may know them a priori already.
-    //------------------------------------------------------
-    double init_phase[N_SQRT]; init_phase[0] = 0.0;  // can always fix first level
-    uint32_t init_phase_total_cnt = 1;
-    for( uint32_t i = 1; i < N_SQRT; i++ )
-    {
-        init_phase_total_cnt *= INIT_PHASE_CNT;
-    }
-
-    double best_min_dist = 0.0;
-    double x_best[N];
-    double y_best[N];
-    if ( debug ) std::cout << "init_phase_total_cnt=" << init_phase_total_cnt << "\n";
-    for( uint32_t i = 0; i < init_phase_total_cnt; i++ )
-    {
-        for( uint32_t j = 1; j < N_SQRT; j++ )
-        {
-            uint32_t nom = (i >> ((j-1)*INIT_PHASE_CNT_LG2)) & (INIT_PHASE_CNT - 1);
-            init_phase[j] = PI_DIV_2 * double(nom)/double(INIT_PHASE_CNT);
-            if ( debug ) std::cout << "i=" << i << " init_phase[" << j << "]=" << init_phase[j] << " (nom=" << nom << ")\n";
-        }
-
-        // choose point locations
-        uint32_t k = 0;
-        double this_min_dist = 100000000.0;
-        for( uint32_t m = 0; this_min_dist > best_min_dist && m < N_SQRT; m++ )
-        {
-            const double m_f = m+1;
-            const double a = m_f/N_SQRT_F;
-            double p = init_phase[m];
-            for( uint32_t n = 0; this_min_dist > best_min_dist && n < N_SQRT; n++, k++, p += PI_DIV_2 )
-            {
-                x[k] = a * std::cos( p );
-                y[k] = a * std::sin( p );
-                if ( x[k] >= -EPSILON && x[k] <= EPSILON ) x[k] = 0.0;
-                if ( y[k] >= -EPSILON && y[k] <= EPSILON ) y[k] = 0.0;
-                if ( debug ) std::cout << "    xy[" << a << "," << p << "]=[" << x[k] << "," << y[k] << "]\n";
-                if ( k != 0 ) {
-                    for( uint32_t kk = 0; this_min_dist > best_min_dist && kk < k; kk++ )
-                    {
-                        double x_diff = x[k] - x[kk];
-                        double y_diff = y[k] - y[kk];
-                        double dist = std::sqrt( x_diff*x_diff + y_diff*y_diff );
-                        if ( debug ) std::cout << "        dist=" << dist << " xy_diff=[" << x_diff << "," << y_diff << "]\n";
-                        if ( dist == 0 ) exit( 1 );
-                        if ( dist < this_min_dist ) this_min_dist = dist;
-                    }
-                }
-            }
-        }
-
-        if ( this_min_dist > best_min_dist ) {
-            best_min_dist = this_min_dist;
-            std::cout << "    new best_min_dist=" << best_min_dist << "\n";
-            for( k = 0; k < N; k++ )
-            {
-                x_best[k] = x[k];
-                y_best[k] = y[k];
-            }
-        }
-    }
-
-    std::cout << "\nBest minimum distance: " << best_min_dist << "\n";
-    std::cout << "Points on constellation diagram:\n";
-    for( uint32_t k = 0; k < N; k++ )
-    {
-        std::cout << "    [" << x_best[k] << ", " << y_best[k] << "]\n";
-    }
 }
 
 uint32_t rand_n( uint32_t n )
@@ -150,6 +72,7 @@ void sim( void )
     //------------------------------------------------------
     // For each clock cycle
     //------------------------------------------------------
+    std::cout << "TIMESTEP_PS=" << TIMESTEP_PS << "\n\n";
     double Q_mag_prev = mV_MAX;
     double eye_width_ps_min = 1000000.0;
     double eye_width_ps_max = 0.0;

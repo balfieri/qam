@@ -1,1 +1,1 @@
-rm -fr qam *.o *.out
+rm -fr qam *.o *.out *.sp *.raw *.eps

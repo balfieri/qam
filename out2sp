@@ -1,0 +1,61 @@
+#!/usr/bin/perl -w
+#
+# out2sp - convert qam.out file to ngspice simulation file so we can capture the waves using ngspice
+#          and perhaps model the channel later
+#
+use strict;
+use warnings;
+
+my $sp_base = shift @ARGV || "qam";
+
+my $I_s  = "VI I_clk 0 PWL ( 0p 0m";
+my $Q_s  = "VQ Q_clk 0 PWL ( 0p 0m";
+my $IQ_s = "VIQ IQ_clk 0 PWL ( 0p 0m";
+
+open( Q, "qam.out" ) or die "ERROR: could not open qam.out for input\n";
+my $ts = 0.0;
+my $time = 0.0;
+while( <Q> )
+{
+    if ( /TIMESTEP_PS=(\S+)/ ) {
+        $ts = $1;
+    } elsif ( /(\S+) \+ (\S+) \= (\S+)/ ) {
+        my $I  = $1;
+        my $Q  = $2;
+        my $IQ = $3;
+        $time += $ts;
+        $I_s  .= " ${time}p " . sprintf( "%6.4fm", $I );
+        $Q_s  .= " ${time}p " . sprintf( "%6.4fm", $Q );
+        $IQ_s .= " ${time}p " . sprintf( "%6.4fm", $IQ );
+    }
+}
+close( Q );
+
+$I_s  .= " )";
+$Q_s  .= " )";
+$IQ_s .= " )";
+
+my $end_time = int( $time + 0.5 );
+
+print "Creating ${sp_base}.sp and running ngspice on it...\n";
+open( S, ">${sp_base}.sp" ) or die "ERROR: unable to open ${sp_base}.sp for output\n";
+print S <<EOF;
+* ${sp_base}.sp
+$I_s
+$Q_s
+$IQ_s
+
+.OP
+
+.tran 1p ${end_time}p
+
+.control
+run
+hardcopy ${sp_base}.eps v(I_clk) v(Q_clk) v(IQ_clk)
+.endc
+EOF
+close( S );
+
+my $cmd = "~/ngspice/release/src/ngspice -b ${sp_base}.sp -r ${sp_base}.raw >& ${sp_base}.sp.out";
+print "${cmd}\n";
+system( $cmd );
