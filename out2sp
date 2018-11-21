@@ -13,7 +13,7 @@ my $I_s  = "VI I_clk 0 PWL ( 0p 0m";
 my $Q_s  = "VQ Q_clk 0 PWL ( 0p 0m";
 my $IQ_s = "VIQ IQ_clk 0 PWL ( 0p 0m";
 
-open( Q, "qam.out" ) or die "ERROR: could not open qam.out for input\n";
+open( Q, "${out_base}.out" ) or die "ERROR: could not open ${out_base}.out for input\n";
 my $ts = 0.0;
 my $time = 0.0;
 while( <Q> )
@@ -53,6 +53,9 @@ $IQ_s
 .control
 run
 hardcopy ${sp_base}.eps v(I_clk) v(Q_clk) v(IQ_clk)
+hardcopy ${sp_base}.I.eps v(I_clk) 
+hardcopy ${sp_base}.Q.eps v(Q_clk) 
+hardcopy ${sp_base}.IQ.eps v(IQ_clk) 
 .endc
 EOF
 close( S );
