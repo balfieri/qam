@@ -129,20 +129,22 @@ void sim( void )
                 //------------------------------------------------------
                 // Sharp Edges
                 //------------------------------------------------------
-                bool I_rising = ts <= CLK_TIMESTEP_CNT/2;
-                double rising_to    = I_rising ? I_mag      : Q_mag;  
-                double falling_from = I_rising ? Q_mag_prev : I_mag;
-                double rising_mV    = 0.0;
-                double falling_mV   = falling_from;
-                if ( ts >= RISING_END_PS ) {
+                bool     I_rising     = ts <= CLK_TIMESTEP_CNT/2;
+                uint32_t ts_eff       = I_rising ? ts         : (ts - CLK_TIMESTEP_CNT/2);
+                double   ps           = double(ts_eff) * TIMESTEP_PS;
+                double   rising_to    = I_rising ? I_mag      : Q_mag;  
+                double   falling_from = I_rising ? Q_mag_prev : I_mag;
+                double   rising_mV    = 0.0;
+                double   falling_mV   = falling_from;
+                if ( ps >= RISING_END_PS ) {
                     rising_mV = rising_to;
-                } else if ( ts >= RISING_START_PS ) {
-                    rising_mV = (ts-RISING_START_PS)/(RISING_END_PS-RISING_START_PS) * rising_to;
+                } else if ( ps >= RISING_START_PS ) {
+                    rising_mV = (ps-RISING_START_PS)/(RISING_END_PS-RISING_START_PS) * rising_to;
                 }
-                if ( ts >= FALLING_END_PS ) {
+                if ( ps >= FALLING_END_PS ) {
                     falling_mV = 0.0;
-                } else if ( ts >= FALLING_START_PS ) {
-                    falling_mV = (1.0 - (ts-FALLING_START_PS)/(FALLING_END_PS-FALLING_START_PS)) * falling_from;
+                } else if ( ps >= FALLING_START_PS ) {
+                    falling_mV = (1.0 - (ps-FALLING_START_PS)/(FALLING_END_PS-FALLING_START_PS)) * falling_from;
                 }
                 I_mV = I_rising ? rising_mV  : falling_mV;
                 Q_mV = I_rising ? falling_mV : rising_mV;
