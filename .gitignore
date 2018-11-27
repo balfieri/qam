@@ -4,3 +4,5 @@ qam.o
 *.sp
 *.raw
 *.eps
+*.png
+*.jpg
