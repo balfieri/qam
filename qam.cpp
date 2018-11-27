@@ -35,7 +35,7 @@ static constexpr double   CLK_GHZ            = 10;  // 10 GHz
 static constexpr uint32_t CLK_TIMESTEP_CNT   = 50;  // per clock
 static constexpr uint32_t SIM_CLK_CNT        = 8;
 static constexpr double   mV_MAX             = 200; // 200 mV max per clock
-static constexpr bool     USE_SIN_COS        = true; 
+static constexpr bool     USE_SIN_COS        = false;
 static constexpr double   TRANS_START_FRAC   = 0.40; // fraction of half-clock where transition starts
 static constexpr double   TRANS_END_FRAC     = 0.60; // fraction of half-clock where transition ends
 
