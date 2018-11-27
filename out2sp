@@ -52,7 +52,7 @@ $Q_s
 $IQ_s
 
 * LC-dominated lossy transmission line (10mm) with Z0 = 43 ohms
-.model line ltra len='$line_len' rel=1 r=5.361470e+01 g=0 l=2.625091e-07 c=1.391871e-10 steplimit compactrel=1.0e-3 compactabs=1.0e-14
+.model line ltra len='$line_len' rel=1 r=5.361470e+01 g=0 l=2.625091e-07 c=1.391871e-10 
 ow0   IQ_clk     Vmin IQ_clk_rcv Vmin line       ; transmission line proper (one wire)
 cw0t  IQ_clk     Vmin 1p                         ; Tx terminating capacitance
 cw0r  IQ_clk_rcv Vmin 1p                         ; Rx terminating capacitance
