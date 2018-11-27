@@ -46,18 +46,20 @@ print S <<EOF;
 .param Vmax = 200m
 .param Vgnd = 0m
 .param Vmin = -200m
+.param Z0   = 44
 
 $I_s
 $Q_s
 $IQ_s
 
-* LC-dominated lossy transmission line (10mm) with Z0 = 43 ohms
+* LC-dominated lossy transmission line ($line_len) with Z0 
 .model line ltra len='$line_len' rel=1 r=5.361470e+01 g=0 l=2.625091e-07 c=1.391871e-10 
-ow0   IQ_clk     Vmin IQ_clk_rcv Vmin line       ; transmission line proper (one wire)
-cw0t  IQ_clk     Vmin 1p                         ; Tx terminating capacitance
-cw0r  IQ_clk_rcv Vmin 1p                         ; Rx terminating capacitance
-rw0rp IQ_clk_rcv Vmax '43/2'                     ; Rx terminating resistance tied to Vmax
-rw0rn IQ_clk_rcv Vmin '43/2'                     ; Rx terminating resistance tied to Vmin
+rtx   IQ_clk    IQ_clk_tx      Z0               ; Tx resistance == Z0
+cw0t  IQ_clk_tx Vmin 1p                         ; Tx terminating capacitance
+ow0   IQ_clk_tx Vmin IQ_clk_rx Vmin line        ; transmission line proper (one wire)
+cw0r  IQ_clk_rx Vmin 1p                         ; Rx terminating capacitance
+rw0rp IQ_clk_rx Vmax 'Z0/2'                     ; Rx terminating resistance tied to Vmax
+rw0rn IQ_clk_rx Vmin 'Z0/2'                     ; Rx terminating resistance tied to Vmin
 
 .OP
 
@@ -69,9 +71,9 @@ hardcopy ${sp_base}.iqiq.eps v(I_clk) v(Q_clk) v(IQ_clk)
 hardcopy ${sp_base}.inq.eps v(I_clk) v(Q_clk)
 hardcopy ${sp_base}.i.eps v(I_clk) 
 hardcopy ${sp_base}.q.eps v(Q_clk) 
-hardcopy ${sp_base}.iqt.eps v(IQ_clk) 
-hardcopy ${sp_base}.iqr.eps v(IQ_clk_rcv)
-hardcopy ${sp_base}.iqiq.eps v(IQ_clk) v(IQ_clk_rcv)
+hardcopy ${sp_base}.iqt.eps v(IQ_clk_tx) 
+hardcopy ${sp_base}.iqr.eps v(IQ_clk_rx)
+hardcopy ${sp_base}.iqiq.eps v(IQ_clk_tx) v(IQ_clk_rx)
 .endc
 EOF
 close( S );
