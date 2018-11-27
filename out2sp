@@ -75,9 +75,10 @@ Cw0r  IQ_clk_rx GND  0.5p               \$ Rx terminating capacitance
 Rw0r  IQ_clk_rx GND            R='Z0'   \$ Rx terminating resistance 
 
 .OP
-
 .tran 1p ${end_time}p
-
+EOF
+if ( $use_ngspice ) {
+    print S <<EOF;
 .control
 run
 hardcopy ${sp_base}.iqiq.eps v(I_clk) v(Q_clk) v(IQ_clk)
@@ -89,6 +90,11 @@ hardcopy ${sp_base}.iqr.eps v(IQ_clk_rx)
 hardcopy ${sp_base}.iqiq.eps v(IQ_clk) v(IQ_clk_rx)
 .endc
 EOF
+} else {
+    print S <<EOF;
+.option post=2 probe runlvl=5 accurate 
+EOF
+}
 close( S );
 
 my $cmd;
