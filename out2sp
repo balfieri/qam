@@ -13,7 +13,6 @@ my $spice       = shift @ARGV || "ngspice";
 my $sp_base     = shift @ARGV || $out_base . ".${line_len}";
 
 my $use_ngspice = int( $spice =~ /ngspice/ );
-$use_ngspice or die "ERROR: can't do non-ngspice right now";
 
 my $I_s  = "VI   I_clk 0 DC 0.0 PWL ( 0p 0m";
 my $Q_s  = "VQ   Q_clk 0 DC 0.0 PWL ( 0p 0m";
@@ -44,7 +43,7 @@ $IQ_s .= " )";
 
 my $end_time = int( $time + 0.5 );
 
-print "Creating ${sp_base}.sp and running ngspice on it...\n";
+print "Creating ${sp_base}.sp and running ${spice} on it...\n";
 open( S, ">${sp_base}.sp" ) or die "ERROR: unable to open ${sp_base}.sp for output\n";
 print S <<EOF;
 * ${sp_base}.sp
@@ -63,13 +62,22 @@ Cw0t  IQ_clk_tx GND  0.5p               \$ Tx terminating capacitance
 EOF
 if ( $use_ngspice ) {
     print S <<EOF;
-.model line ltra len='$line_len' rel=1 r=5.361470e+01 g=0 l=2.625091e-07 c=1.391871e-10 
-ow0   IQ_clk_tx GND  IQ_clk_rx GND line \$ transmission line proper (one wire)
+.model line ltra len='$line_len' rel=1  \$ transmission line proper (one wire)
++ l   = 2.625091e-07 
++ c   = 1.391871e-10 
++ r   = 5.361470e+01 
++ g   = 0.0000000+00
+ow0   IQ_clk_tx GND  IQ_clk_rx GND line 
 EOF
 } else {
     print S <<EOF;
-.inc 'HDI_Wire_stripline_SE_1sig_43ohm.rlgc'
-W1   IQ_clk_tx GND  IQ_clk_rx GND  RLGCmodel=hdi_model N=1 L=5mm
+.model hdi_model W MODELTYPE=RLGC, N=1  \$ transmission line proper (one wire)
++ Lo = 2.625091e-07
++ Co = 1.391871e-10
++ Ro = 5.361470e+01
++ Go = 0.000000e+00
++ Rs = 5.292260e-03
+W1    IQ_clk_tx GND  IQ_clk_rx GND  RLGCmodel=hdi_model N=1 L=5mm
 EOF
 }
 print S <<EOF;
@@ -103,6 +111,7 @@ my $cmd;
 if ( $use_ngspice ) {
     $cmd = "${spice} -b ${sp_base}.sp -r ${sp_base}.raw >& ${sp_base}.out";
 } else {
+    $cmd = "${spice} -b ${sp_base}.sp                   >& ${sp_base}.out";
 }
 print "${cmd}\n";
 system( $cmd );
