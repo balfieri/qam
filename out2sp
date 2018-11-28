@@ -6,12 +6,13 @@
 use strict;
 use warnings;
 
-my $line_len    = shift @ARGV || "10m";
+my $line_len    = shift @ARGV || "10m";         # 10mm (not 10 meters)
 $line_len !~ /m$/ and $line_len .= "m";
 my $out_base    = shift @ARGV || "qam";
+my $spice       = shift @ARGV || "ngspice";
 my $sp_base     = shift @ARGV || $out_base . ".${line_len}";
-my $use_ngspice = shift @ARGV || 1;
 
+my $use_ngspice = int( $spice =~ /ngspice/ );
 $use_ngspice or die "ERROR: can't do non-ngspice right now";
 
 my $I_s  = "VI   I_clk 0 DC 0.0 PWL ( 0p 0m";
@@ -100,7 +101,7 @@ close( S );
 
 my $cmd;
 if ( $use_ngspice ) {
-    $cmd = "~/ngspice/release/src/ngspice -b ${sp_base}.sp -r ${sp_base}.raw >& ${sp_base}.sp.out";
+    $cmd = "${spice} -b ${sp_base}.sp -r ${sp_base}.raw >& ${sp_base}.sp.out";
 } else {
 }
 print "${cmd}\n";
