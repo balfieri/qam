@@ -1,22 +1,22 @@
 #!/usr/bin/perl -w
 #
-# out2sp - convert qam.out file to ngspice simulation file so we can capture the waves using ngspice
-#          and perhaps model the channel later
+# out2sp - convert qam.out file to ngspice or hspice simulation; also models a 10mm organic package
+#          stripline as the channel
 #
 use strict;
 use warnings;
 
-my $line_len = shift @ARGV || "10m";
+my $line_len    = shift @ARGV || "10m";
 $line_len !~ /m$/ and $line_len .= "m";
-my $out_base = shift @ARGV || "qam";
-my $sp_base  = shift @ARGV || $out_base . ".${line_len}";
+my $out_base    = shift @ARGV || "qam";
+my $sp_base     = shift @ARGV || $out_base . ".${line_len}";
+my $use_ngspice = shift @ARGV || 1;
+
+$use_ngspice or die "ERROR: can't do non-ngspice right now";
 
 my $I_s  = "VI   I_clk 0 DC 0.0 PWL ( 0p 0m";
 my $Q_s  = "VQ   Q_clk 0 DC 0.0 PWL ( 0p 0m";
 my $IQ_s = "VIQ IQ_clk 0 DC 0.0 PWL ( 0p 0m";
-
-my $use_ngspice = int( `uname` =~ /Darwin/ );
-$use_ngspice or die "ERROR: can't do non-ngspice right now";
 
 open( Q, "${out_base}.out" ) or die "ERROR: could not open ${out_base}.out for input\n";
 my $ts = 0.0;
