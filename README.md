@@ -19,8 +19,13 @@ This is all open-source.  Refer to the LICENSE.md for licensing details.
 To build and run the test on Linux, Cygwin, or macOS:
 </p>
 <pre>
-doit.qam
+doit.qam > qam.out
 </pre>
+
+<p>
+There is also a <b>out2sp</b> script can generate and and run ngspice or hspice simulation. It runs over the qam.out file 
+from the previous command.  It will require some fiddling for your environment.
+</p>
 
 <p>
 Bob Alfieri<br>
