@@ -101,7 +101,7 @@ close( S );
 
 my $cmd;
 if ( $use_ngspice ) {
-    $cmd = "${spice} -b ${sp_base}.sp -r ${sp_base}.raw >& ${sp_base}.sp.out";
+    $cmd = "${spice} -b ${sp_base}.sp -r ${sp_base}.raw >& ${sp_base}.out";
 } else {
 }
 print "${cmd}\n";
