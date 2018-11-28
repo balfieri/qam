@@ -23,8 +23,8 @@ doit.qam > qam.out
 </pre>
 
 <p>
-There is also an <b>out2sp</b> script can generate and run an ngspice or hspice simulation based on the qam.out file contents. 
-It will likely require some fiddling for your environment.
+There is also an <b>out2sp</b> script that can generate and run an ngspice or hspice simulation using the values from the qam.out output
+file.  The script will likely require some fiddling for your environment.
 </p>
 
 <p>
