@@ -6,9 +6,9 @@
 use strict;
 use warnings;
 
-my $out_base = shift @ARGV || "qam";
 my $line_len = shift @ARGV || "10m";
 $line_len !~ /m$/ and $line_len .= "m";
+my $out_base = shift @ARGV || "qam";
 my $sp_base  = shift @ARGV || $out_base . ".${line_len}";
 
 my $I_s  = "VI   I_clk 0 DC 0.0 PWL ( 0p 0m";
