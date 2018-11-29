@@ -88,6 +88,7 @@ Rw0r  IQ_clk_rx GND            R='Z0'   \$ Rx terminating resistance
 
 .OP
 .tran 1p ${end_time}p
+.save v(I_clk) v(Q_clk) v(IQ_clk) v(IQ_clk_rx)
 EOF
 if ( $use_ngspice ) {
     print S <<EOF;
@@ -111,7 +112,7 @@ close( S );
 
 my $cmd;
 if ( $use_ngspice ) {
-    $cmd = "${spice} -b ${sp_base}.sp -r ${sp_base}.raw >& ${sp_base}.out";
+    $cmd = "export SPICE_ASCIIRAWFILE=1; ${spice} -b ${sp_base}.sp -r ${sp_base}.raw >& ${sp_base}.out";
 } else {
     $cmd = "${spice} -b ${sp_base}.sp                   >& ${sp_base}.out";
 }
