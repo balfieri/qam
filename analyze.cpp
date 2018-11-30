@@ -110,7 +110,7 @@ int main( int argc, const char * argv[] )
     }
 
     //------------------------------------------------------------------
-    // Now read in all the values of iq and iq_rx.
+    // Read in all the values of iq and iq_rx.
     //------------------------------------------------------------------
     struct Entry
     {
@@ -139,5 +139,14 @@ int main( int argc, const char * argv[] )
         }
     }
     fraw.close();
+
+    //------------------------------------------------------------------
+    // Sample all the iq values, which are perfectly spaced and have perfect voltages.
+    //------------------------------------------------------------------
+    for( auto it = entries.begin(); it != entries.end(); it++ )
+    {
+        const Entry& entry = *it;
+    }
+
     return 0;
 }
