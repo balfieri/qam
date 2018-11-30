@@ -117,13 +117,13 @@ int main( int argc, const char * argv[] )
     }
 
     //------------------------------------------------------------------
-    // Read in all the values of iq and iq_rx.
+    // Read in all the values of iq_tx and iq_rx.
     //------------------------------------------------------------------
     struct Entry
     {
         int64_t index;
         double  time_ps;
-        double  iq;
+        double  iq_tx;
         double  iq_rx;
     };
     std::vector<Entry> entries;
@@ -141,42 +141,42 @@ int main( int argc, const char * argv[] )
         {
             if ( !std::getline( fraw, s ) ) die( "truncated entry at end of file" );
             pos = 0;
-            if ( i == 2 ) entry.iq    = parse_flt( s, pos );
+            if ( i == 2 ) entry.iq_tx = parse_flt( s, pos ) / 2.0;   // in RX terms
             if ( i == 3 ) entry.iq_rx = parse_flt( s, pos );
         }
     }
     fraw.close();
 
     //------------------------------------------------------------------
-    // Sample iq and iq_rx values at their periods.
+    // Sample iq_tx and iq_rx values at their periods.
     //------------------------------------------------------------------
-    Entry entry_prev{ -1, -CLK_PERIOD_PS, mV_MAX_TX, 0.0 };
+    Entry entry_prev{ -1, -CLK_PERIOD_PS, mV_MAX_RX, 0.0 };
     Entry entry;
-    double iq_time_ps    = 0.0;
+    double iq_tx_time_ps = 0.0;
     double iq_rx_time_ps = 0.0;
-    std::vector<double> iq_values;
+    std::vector<double> iq_tx_values;
     std::vector<double> iq_rx_values;
     for( auto it = entries.begin(); it != entries.end(); it++ )
     {
         entry = *it;
         entry_prev = entry;
 
-        // iq
-        if ( entry.time_ps >= iq_time_ps ) {
-            double a = entry_prev.time_ps + iq_time_ps / (entry.time_ps - entry_prev.time_ps); 
-            double iq = lerp( entry_prev.iq, entry.iq, a );
-            size_t vi = iq_values.size();
-            iq_values.resize( vi+1 );
-            iq_values[vi] = iq;
-            iq_time_ps += CLK_PERIOD_PS;
-            std::cout << entry.time_ps << ": iq_tx=" << iq << "\n";
+        // iq_tx
+        if ( entry.time_ps >= iq_tx_time_ps ) {
+            double a     = entry_prev.time_ps + iq_tx_time_ps / (entry.time_ps - entry_prev.time_ps); 
+            double iq_tx = lerp( entry_prev.iq_tx, entry.iq_tx, a );
+            size_t vi    = iq_tx_values.size();
+            iq_tx_values.resize( vi+1 );
+            iq_tx_values[vi] = iq_tx;
+            iq_tx_time_ps += CLK_PERIOD_PS;
+            std::cout << entry.time_ps << ": iq_tx=" << iq_tx << "\n";
         }
 
         // iq_rx
         if ( entry.time_ps >= iq_rx_time_ps ) {
-            double a = entry_prev.time_ps + iq_rx_time_ps / (entry.time_ps - entry_prev.time_ps); 
+            double a     = entry_prev.time_ps + iq_rx_time_ps / (entry.time_ps - entry_prev.time_ps); 
             double iq_rx = lerp( entry_prev.iq_rx, entry.iq_rx, a );
-            size_t vi = iq_rx_values.size();
+            size_t vi    = iq_rx_values.size();
             iq_rx_values.resize( vi+1 );
             iq_rx_values[vi] = iq_rx;
             iq_rx_time_ps += SAMPLE_PERIOD_PS;
