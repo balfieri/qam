@@ -52,7 +52,7 @@ void parse_skip_whitespace( std::string s, size_t& pos )
     size_t len = s.length();
     while( pos < len ) 
     {
-        char c = s.at( pos );
+        char c = s.at( pos++ );
         if ( c != ' ' && c != '\t' && c != '\n' ) break;
     }
 }
@@ -61,14 +61,18 @@ std::string parse_non_whitespace( std::string s, size_t& pos )
 {
     parse_skip_whitespace( s, pos );
     size_t len = s.length();
+    size_t pos_first = pos;
     std::string nw = "";
     while( pos < len ) 
     {
-        char c = s.at( pos );
-        if ( c == ' ' || c != '\t' || c == '\n' ) break;
+        char c = s.at( pos++ );
+        if ( c == ' ' || c == '\t' || c == '\n' ) break;
         nw += c;
     }
-    if ( nw == "" ) die( "expected non-whitespace, got nothing more on this line: " + s );
+    if ( nw == "" ) {
+        std::cout << "ERROR: expected non-whitespace, got nothing more on this line starting at pos=" << pos_first << ": " << s << "\n";
+        exit( 1 );
+    }
     return nw;
 }
 
