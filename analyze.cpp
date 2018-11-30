@@ -123,8 +123,8 @@ int main( int argc, const char * argv[] )
     {
         int64_t index;
         double  time_ps;
-        double  iq_tx;
-        double  iq_rx;
+        double  iq_tx_mv;
+        double  iq_rx_mv;
     };
     std::vector<Entry> entries;
 
@@ -141,8 +141,8 @@ int main( int argc, const char * argv[] )
         {
             if ( !std::getline( fraw, s ) ) die( "truncated entry at end of file" );
             pos = 0;
-            if ( i == 2 ) entry.iq_tx = parse_flt( s, pos ) / 2.0;   // in RX terms
-            if ( i == 3 ) entry.iq_rx = parse_flt( s, pos );
+            if ( i == 2 ) entry.iq_tx_mv = parse_flt( s, pos ) *  500.0;   // in RX terms
+            if ( i == 3 ) entry.iq_rx_mv = parse_flt( s, pos ) * 1000.0;
         }
     }
     fraw.close();
@@ -159,12 +159,11 @@ int main( int argc, const char * argv[] )
     for( auto it = entries.begin(); it != entries.end(); it++ )
     {
         entry = *it;
-        entry_prev = entry;
 
         // iq_tx
         if ( entry.time_ps >= iq_tx_time_ps ) {
-            double a     = entry_prev.time_ps + iq_tx_time_ps / (entry.time_ps - entry_prev.time_ps); 
-            double iq_tx = lerp( entry_prev.iq_tx, entry.iq_tx, a );
+            double a     = (iq_tx_time_ps - entry_prev.time_ps) / (entry.time_ps - entry_prev.time_ps); 
+            double iq_tx = lerp( entry_prev.iq_tx_mv, entry.iq_tx_mv, a );
             size_t vi    = iq_tx_values.size();
             iq_tx_values.resize( vi+1 );
             iq_tx_values[vi] = iq_tx;
@@ -174,14 +173,16 @@ int main( int argc, const char * argv[] )
 
         // iq_rx
         if ( entry.time_ps >= iq_rx_time_ps ) {
-            double a     = entry_prev.time_ps + iq_rx_time_ps / (entry.time_ps - entry_prev.time_ps); 
-            double iq_rx = lerp( entry_prev.iq_rx, entry.iq_rx, a );
+            double a     = (iq_rx_time_ps - entry_prev.time_ps) / (entry.time_ps - entry_prev.time_ps); 
+            double iq_rx = lerp( entry_prev.iq_rx_mv, entry.iq_rx_mv, a );
             size_t vi    = iq_rx_values.size();
             iq_rx_values.resize( vi+1 );
             iq_rx_values[vi] = iq_rx;
             iq_rx_time_ps += SAMPLE_PERIOD_PS;
             std::cout << entry.time_ps << ": iq_rx=" << iq_rx << "\n";
         }
+
+        entry_prev = entry;
     }
 
     return 0;
