@@ -52,8 +52,9 @@ void parse_skip_whitespace( std::string s, size_t& pos )
     size_t len = s.length();
     while( pos < len ) 
     {
-        char c = s.at( pos++ );
+        char c = s.at( pos );
         if ( c != ' ' && c != '\t' && c != '\n' ) break;
+        pos++;
     }
 }
 
@@ -65,9 +66,10 @@ std::string parse_non_whitespace( std::string s, size_t& pos )
     std::string nw = "";
     while( pos < len ) 
     {
-        char c = s.at( pos++ );
+        char c = s.at( pos );
         if ( c == ' ' || c == '\t' || c == '\n' ) break;
         nw += c;
+        pos++;
     }
     if ( nw == "" ) {
         std::cout << "ERROR: expected non-whitespace, got nothing more on this line starting at pos=" << pos_first << ": " << s << "\n";
@@ -78,12 +80,14 @@ std::string parse_non_whitespace( std::string s, size_t& pos )
 
 int64_t parse_int( std::string s, size_t& pos )
 {
-    return std::stoi( parse_non_whitespace( s, pos ) );
+    std::string i_s = parse_non_whitespace( s, pos );
+    return std::stoi( i_s );
 }
 
 double parse_flt( std::string s, size_t& pos )
 {
-    return std::stof( parse_non_whitespace( s, pos ) );
+    std::string f_s = parse_non_whitespace( s, pos );
+    return std::stof( f_s );
 }
 
 int main( int argc, const char * argv[] )
@@ -98,7 +102,7 @@ int main( int argc, const char * argv[] )
     if ( !fraw.is_open() ) die( "could not open raw file " + raw_file );
     std::string s;
     uint32_t values_cnt = 0;
-    while( std::getline( fraw, s ) && values_cnt != 2 ) 
+    while( values_cnt != 2 && std::getline( fraw, s ) )
     {
         if ( s.substr( 0, 7 ) == "Values:" ) {
             values_cnt++;
@@ -129,6 +133,7 @@ int main( int argc, const char * argv[] )
         for( uint32_t i = 0; i < 4; i++ )
         {
             if ( !std::getline( fraw, s ) ) die( "truncated entry at end of file" );
+            pos = 0;
             if ( i == 2 ) entry.iq    = parse_flt( s, pos );
             if ( i == 3 ) entry.iq_rx = parse_flt( s, pos );
         }
