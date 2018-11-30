@@ -39,7 +39,7 @@ static constexpr double   SAMPLE_GHZ         = 100; // RX sample rate
 static constexpr double   mV_MAX_TX          = 400; // 200 mV max for Tx source
 
 // derived constants
-static constexpr double   CLK_PERIOD_PS      = 1000.0 / CLK_GHZ;
+static constexpr double   CLK_PERIOD_PS      = 500.0 / CLK_GHZ;
 static constexpr double   SAMPLE_PERIOD_PS   = 1000.0 / SAMPLE_GHZ;
 static constexpr double   mV_MAX_RX          = mV_MAX_TX/2; 
 static constexpr double   Vt_HIGH            = mV_MAX_RX * 2.0 / 3.0;
@@ -100,12 +100,23 @@ double lerp( double f1, const double f2, const double a )
     return a*f1 + (1.0 - a)*f2;
 }
 
-int pam4( double mV )
+int pam4( double mV, double& margin )
 {
-    return (mV > Vt_HIGH)                ? 0b11 :
-           (mV < Vt_HIGH && mV > Vt_MID) ? 0b10 :
-           (mV > Vt_LOW  && mV < Vt_MID) ? 0b01 :
-                                           0b00;
+    if ( mV > Vt_HIGH ) {
+        margin = mV - Vt_HIGH;
+        return 0b11;
+    } else if ( mV < Vt_HIGH && mV > Vt_MID ) {
+        margin = mV - Vt_MID;
+        if ( (Vt_HIGH-mV) < margin ) margin = Vt_HIGH-mV;
+        return 0b10;
+    } else if ( mV > Vt_LOW  && mV < Vt_MID ) {
+        margin = mV - Vt_LOW;
+        if ( (Vt_MID-mV) < margin ) margin = Vt_MID-mV;
+        return 0b01;
+    } else {
+        margin = Vt_LOW - mV;
+        return 0b00;
+    }
 }
 
 int main( int argc, const char * argv[] )
@@ -179,7 +190,9 @@ int main( int argc, const char * argv[] )
             iq_tx_values.resize( vi+1 );
             iq_tx_values[vi] = iq_tx;
             iq_tx_time_ps += CLK_PERIOD_PS;
-            printf( "TX: %5d %4d %1d\n", int(entry.time_ps), int(iq_tx), pam4(iq_tx) );
+            double   margin;
+            uint32_t bits = pam4( iq_tx, margin );
+            printf( "TX: %5d %4d %1d %4d\n", int(entry.time_ps), int(iq_tx), bits, int(margin) );
         }
 
         // iq_rx
@@ -190,7 +203,9 @@ int main( int argc, const char * argv[] )
             iq_rx_values.resize( vi+1 );
             iq_rx_values[vi] = iq_rx;
             iq_rx_time_ps += SAMPLE_PERIOD_PS;
-            printf( "RX: %5d %4d %1d\n", int(entry.time_ps), int(iq_rx), pam4(iq_rx) );
+            double   margin;
+            uint32_t bits = pam4( iq_rx, margin );
+            printf( "TX: %5d %4d %1d %4d\n", int(entry.time_ps), int(iq_rx), bits, int(margin) );
         }
 
         entry_prev = entry;
