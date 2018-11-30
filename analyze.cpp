@@ -34,11 +34,13 @@ static constexpr bool     debug              = false;
 
 // config constants
 static constexpr uint32_t VLEVEL_CNT         = 4;   // number of voltage levels
-static constexpr double   CLK_GHZ            = 10;  // 10 GHz
-static constexpr double   mV_MAX_TX          = 200; // 200 mV max for Tx source
+static constexpr double   CLK_GHZ            = 10;  // TX clock rate
+static constexpr double   SAMPLE_GHZ         = 100; // RX sample rate
+static constexpr double   mV_MAX_TX          = 400; // 200 mV max for Tx source
 
 // derived constants
 static constexpr double   CLK_PERIOD_PS      = 1000.0 / CLK_GHZ;
+static constexpr double   SAMPLE_PERIOD_PS   = 1000.0 / SAMPLE_GHZ;
 static constexpr double   mV_MAX_RX          = mV_MAX_TX/2; 
 
 void die( std::string msg )
@@ -90,6 +92,11 @@ double parse_flt( std::string s, size_t& pos )
     return std::stof( f_s );
 }
 
+inline double lerp( double f1, const double f2, const double a )
+{
+    return a*f1 + (1.0 - a)*f2;
+}
+
 int main( int argc, const char * argv[] )
 {
     if ( argc != 2 ) die( "usage: analyze <raw_file>" );
@@ -115,7 +122,7 @@ int main( int argc, const char * argv[] )
     struct Entry
     {
         int64_t index;
-        double  time;
+        double  time_ps;
         double  iq;
         double  iq_rx;
     };
@@ -128,8 +135,8 @@ int main( int argc, const char * argv[] )
         Entry& entry = entries[e];
 
         size_t pos = 0;
-        entry.index = parse_int( s, pos );
-        entry.time  = parse_flt( s, pos );
+        entry.index   = parse_int( s, pos );
+        entry.time_ps = parse_flt( s, pos ) * 1.0e12;
         for( uint32_t i = 0; i < 4; i++ )
         {
             if ( !std::getline( fraw, s ) ) die( "truncated entry at end of file" );
@@ -141,11 +148,36 @@ int main( int argc, const char * argv[] )
     fraw.close();
 
     //------------------------------------------------------------------
-    // Sample all the iq values, which are perfectly spaced and have perfect voltages.
+    // Sample iq and iq_rx values at their periods.
     //------------------------------------------------------------------
+    Entry entry_prev{ -1, -CLK_PERIOD_PS, mV_MAX_TX, 0.0 };
+    Entry entry;
+    double iq_time_ps    = 0.0;
+    double iq_rx_time_ps = 0.0;
+    std::vector<double> iq_values;
+    std::vector<double> iq_rx_values;
     for( auto it = entries.begin(); it != entries.end(); it++ )
     {
-        const Entry& entry = *it;
+        entry = *it;
+        entry_prev = entry;
+
+        if ( entry.time_ps >= iq_time_ps ) {
+            double a = entry_prev.time_ps + iq_time_ps / (entry.time_ps - entry_prev.time_ps); 
+            double iq = lerp( entry_prev.iq, entry.iq, a );
+            size_t vi = iq_values.size();
+            iq_values.resize( vi+1 );
+            iq_values[vi] = iq;
+            iq_time_ps += CLK_PERIOD_PS;
+        }
+
+        if ( entry.time_ps >= iq_rx_time_ps ) {
+            double a = entry_prev.time_ps + iq_rx_time_ps / (entry.time_ps - entry_prev.time_ps); 
+            double iq = lerp( entry_prev.iq_rx, entry.iq_rx, a );
+            size_t vi = iq_rx_values.size();
+            iq_rx_values.resize( vi+1 );
+            iq_rx_values[vi] = iq;
+            iq_rx_time_ps += SAMPLE_PERIOD_PS;
+        }
     }
 
     return 0;
