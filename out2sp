@@ -31,6 +31,9 @@ while( <Q> )
         my $Q  = $2;
         my $IQ = $3;
         $I > $Vmax and $Vmax = $I;
+        $I *= 2.0;
+        $Q *= 2.0;
+        $IQ *= 2.0;
         $time += $ts;
         $I_s  .= " ${time}p " . sprintf( "%6.4fm", $I );
         $Q_s  .= " ${time}p " . sprintf( "%6.4fm", $Q );
