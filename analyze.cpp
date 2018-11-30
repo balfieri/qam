@@ -161,6 +161,7 @@ int main( int argc, const char * argv[] )
         entry = *it;
         entry_prev = entry;
 
+        // iq
         if ( entry.time_ps >= iq_time_ps ) {
             double a = entry_prev.time_ps + iq_time_ps / (entry.time_ps - entry_prev.time_ps); 
             double iq = lerp( entry_prev.iq, entry.iq, a );
@@ -168,15 +169,18 @@ int main( int argc, const char * argv[] )
             iq_values.resize( vi+1 );
             iq_values[vi] = iq;
             iq_time_ps += CLK_PERIOD_PS;
+            std::cout << entry.time_ps << ": iq_tx=" << iq << "\n";
         }
 
+        // iq_rx
         if ( entry.time_ps >= iq_rx_time_ps ) {
             double a = entry_prev.time_ps + iq_rx_time_ps / (entry.time_ps - entry_prev.time_ps); 
-            double iq = lerp( entry_prev.iq_rx, entry.iq_rx, a );
+            double iq_rx = lerp( entry_prev.iq_rx, entry.iq_rx, a );
             size_t vi = iq_rx_values.size();
             iq_rx_values.resize( vi+1 );
-            iq_rx_values[vi] = iq;
+            iq_rx_values[vi] = iq_rx;
             iq_rx_time_ps += SAMPLE_PERIOD_PS;
+            std::cout << entry.time_ps << ": iq_rx=" << iq_rx << "\n";
         }
     }
 
