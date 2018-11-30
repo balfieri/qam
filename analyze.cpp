@@ -168,7 +168,7 @@ int main( int argc, const char * argv[] )
             iq_tx_values.resize( vi+1 );
             iq_tx_values[vi] = iq_tx;
             iq_tx_time_ps += CLK_PERIOD_PS;
-            std::cout << entry.time_ps << ": iq_tx=" << int(iq_tx) << "\n";
+            printf( "TX: %5d %4d %1d\n", int(entry.time_ps), int(iq_tx), 0 );
         }
 
         // iq_rx
@@ -179,7 +179,7 @@ int main( int argc, const char * argv[] )
             iq_rx_values.resize( vi+1 );
             iq_rx_values[vi] = iq_rx;
             iq_rx_time_ps += SAMPLE_PERIOD_PS;
-            std::cout << entry.time_ps << ": iq_rx=" << int(iq_rx) << "\n";
+            printf( "RX: %5d %4d %1d\n", int(entry.time_ps), int(iq_rx), 0 );
         }
 
         entry_prev = entry;
