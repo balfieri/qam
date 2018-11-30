@@ -24,7 +24,10 @@
 #include <string>
 #include <cmath>
 #include <iostream>
-#include <bitset>
+#include <iomanip>
+#include <fstream>
+#include <sstream>
+#include <vector>
 #include "stdlib.h"
 
 static constexpr bool     debug              = false;
@@ -38,7 +41,94 @@ static constexpr double   mV_MAX_TX          = 200; // 200 mV max for Tx source
 static constexpr double   CLK_PERIOD_PS      = 1000.0 / CLK_GHZ;
 static constexpr double   mV_MAX_RX          = mV_MAX_TX/2; 
 
+void die( std::string msg )
+{
+    std::cout << "ERROR: " << msg << "\n";
+    exit( 1 );
+}
+
+void parse_skip_whitespace( std::string s, size_t& pos )
+{
+    size_t len = s.length();
+    while( pos < len ) 
+    {
+        char c = s.at( pos );
+        if ( c != ' ' && c != '\t' && c != '\n' ) break;
+    }
+}
+
+std::string parse_non_whitespace( std::string s, size_t& pos )
+{
+    parse_skip_whitespace( s, pos );
+    size_t len = s.length();
+    std::string nw = "";
+    while( pos < len ) 
+    {
+        char c = s.at( pos );
+        if ( c == ' ' || c != '\t' || c == '\n' ) break;
+        nw += c;
+    }
+    if ( nw == "" ) die( "expected non-whitespace, got nothing more on this line: " + s );
+    return nw;
+}
+
+int64_t parse_int( std::string s, size_t& pos )
+{
+    return std::stoi( parse_non_whitespace( s, pos ) );
+}
+
+double parse_flt( std::string s, size_t& pos )
+{
+    return std::stof( parse_non_whitespace( s, pos ) );
+}
+
 int main( int argc, const char * argv[] )
 {
+    if ( argc != 2 ) die( "usage: analyze <raw_file>" );
+    std::string raw_file = std::string( argv[1] );
+
+    //------------------------------------------------------------------
+    // First skip through second 'Values:' header.
+    //------------------------------------------------------------------
+    std::ifstream fraw( raw_file );
+    if ( !fraw.is_open() ) die( "could not open raw file " + raw_file );
+    std::string s;
+    uint32_t values_cnt = 0;
+    while( std::getline( fraw, s ) && values_cnt != 2 ) 
+    {
+        if ( s.substr( 0, 7 ) == "Values:" ) {
+            values_cnt++;
+        }
+    }
+
+    //------------------------------------------------------------------
+    // Now read in all the values of iq and iq_rx.
+    //------------------------------------------------------------------
+    struct Entry
+    {
+        int64_t index;
+        double  time;
+        double  iq;
+        double  iq_rx;
+    };
+    std::vector<Entry> entries;
+
+    while( std::getline( fraw, s ) )
+    {
+        size_t e = entries.size();
+        entries.resize( e+1 );
+        Entry& entry = entries[e];
+
+        size_t pos = 0;
+        entry.index = parse_int( s, pos );
+        entry.time  = parse_flt( s, pos );
+        for( uint32_t i = 0; i < 4; i++ )
+        {
+            if ( !std::getline( fraw, s ) ) die( "truncated entry at end of file" );
+            if ( i == 2 ) entry.iq    = parse_flt( s, pos );
+            if ( i == 3 ) entry.iq_rx = parse_flt( s, pos );
+        }
+    }
+    fraw.close();
     return 0;
 }

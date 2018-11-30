@@ -1,5 +1,6 @@
 qam
-qam.o
+analyze
+*.o
 *.out
 *.sp
 *.raw
