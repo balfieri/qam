@@ -194,7 +194,7 @@ int main( int argc, const char * argv[] )
             double   margin;
             uint32_t bits = pam4( iq_tx, margin );
             bool above_noise = margin > NOISE_mV_MAX;
-            printf( "TX: %5d %4d %1d%c %4d\n", int(entry.time_ps), int(iq_tx), bits, above_noise ? ' ' : '?', int(margin) );
+            printf( "TX: %5d %4d %1d %4d %c\n", int(entry.time_ps), int(iq_tx), bits, int(margin), above_noise ? '+' : '-' );
         }
 
         // iq_rx
@@ -208,7 +208,7 @@ int main( int argc, const char * argv[] )
             double   margin;
             uint32_t bits = pam4( iq_rx, margin );
             bool above_noise = margin > NOISE_mV_MAX;
-            printf( "RX: %5d %4d %1d%c %4d\n", int(entry.time_ps), int(iq_rx), bits, above_noise ? ' ' : '?', int(margin) );
+            printf( "RX: %5d %4d %1d %4d %c\n", int(entry.time_ps), int(iq_rx), bits, int(margin), above_noise ? '+' : '-' );
         }
 
         entry_prev = entry;
