@@ -34,15 +34,16 @@ static constexpr bool     debug              = false;
 
 // config constants
 static constexpr uint32_t VLEVEL_CNT         = 4;   // number of voltage levels
-static constexpr double   CLK_GHZ            = 10;  // TX clock rate
-static constexpr double   SAMPLE_GHZ         = 100; // RX sample rate
-static constexpr double   mV_MAX_TX          = 400; // 200 mV max for Tx source
+static constexpr double   TX_CLK_GHZ         = 20;  // TX clock rate 
+static constexpr double   RX_CLK_GHZ         = 100; // RX sample rate
+static constexpr double   TX_mV_MAX          = 400; // 200 mV max for Tx source
+static constexpr double   NOISE_mV_MAX       = 33;  // 32 mV max noise margin
 
 // derived constants
-static constexpr double   CLK_PERIOD_PS      = 500.0 / CLK_GHZ;
-static constexpr double   SAMPLE_PERIOD_PS   = 1000.0 / SAMPLE_GHZ;
-static constexpr double   mV_MAX_RX          = mV_MAX_TX/2; 
-static constexpr double   Vt_HIGH            = mV_MAX_RX * 2.0 / 3.0;
+static constexpr double   TX_CLK_PERIOD_PS   = 1000.0 / TX_CLK_GHZ;
+static constexpr double   RX_CLK_PERIOD_PS   = 1000.0 / RX_CLK_GHZ;
+static constexpr double   RX_mV_MAX          = TX_mV_MAX/2; 
+static constexpr double   Vt_HIGH            = RX_mV_MAX * 2.0 / 3.0;
 static constexpr double   Vt_MID             = 0.0;
 static constexpr double   Vt_LOW             = -Vt_HIGH;
 
@@ -172,7 +173,7 @@ int main( int argc, const char * argv[] )
     //------------------------------------------------------------------
     // Sample iq_tx and iq_rx values at their periods.
     //------------------------------------------------------------------
-    Entry entry_prev{ -1, -CLK_PERIOD_PS, mV_MAX_RX, 0.0 };
+    Entry entry_prev{ -1, -TX_CLK_PERIOD_PS, RX_mV_MAX, 0.0 };
     Entry entry;
     double iq_tx_time_ps = 0.0;
     double iq_rx_time_ps = 0.0;
@@ -189,10 +190,11 @@ int main( int argc, const char * argv[] )
             size_t vi    = iq_tx_values.size();
             iq_tx_values.resize( vi+1 );
             iq_tx_values[vi] = iq_tx;
-            iq_tx_time_ps += CLK_PERIOD_PS;
+            iq_tx_time_ps += TX_CLK_PERIOD_PS;
             double   margin;
             uint32_t bits = pam4( iq_tx, margin );
-            printf( "TX: %5d %4d %1d %4d\n", int(entry.time_ps), int(iq_tx), bits, int(margin) );
+            bool above_noise = margin > NOISE_mV_MAX;
+            printf( "TX: %5d %4d %1d%c %4d\n", int(entry.time_ps), int(iq_tx), bits, above_noise ? ' ' : '?', int(margin) );
         }
 
         // iq_rx
@@ -202,10 +204,11 @@ int main( int argc, const char * argv[] )
             size_t vi    = iq_rx_values.size();
             iq_rx_values.resize( vi+1 );
             iq_rx_values[vi] = iq_rx;
-            iq_rx_time_ps += SAMPLE_PERIOD_PS;
+            iq_rx_time_ps += RX_CLK_PERIOD_PS;
             double   margin;
             uint32_t bits = pam4( iq_rx, margin );
-            printf( "TX: %5d %4d %1d %4d\n", int(entry.time_ps), int(iq_rx), bits, int(margin) );
+            bool above_noise = margin > NOISE_mV_MAX;
+            printf( "RX: %5d %4d %1d%c %4d\n", int(entry.time_ps), int(iq_rx), bits, above_noise ? ' ' : '?', int(margin) );
         }
 
         entry_prev = entry;
