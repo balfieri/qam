@@ -263,17 +263,35 @@ int main( int argc, const char * argv[] )
         printf( "\nrx_offset=%d\n", rx_offset );
         uint32_t cnt = 0;
         uint32_t above_noise_cnt = 0;
+        uint32_t val_cnt[16];
+        uint32_t val_above_noise_cnt[16];
+        for( uint32_t i = 0; i < 16; i++ ) 
+        {
+            val_cnt[i] = 0;
+            val_above_noise_cnt[i] = 0;
+        }
         for( size_t i = rx_offset; i < rx_samples.size(); i += rx_stride )
         {
             cnt++;
             const Sample& sample = rx_samples[i];
+            val_cnt[sample.bits]++;
             bool above_noise = sample.margin > NOISE_mV_MAX;
-            if ( above_noise ) above_noise_cnt++;
+            if ( above_noise ) {
+                above_noise_cnt++;
+                val_above_noise_cnt[sample.bits]++;
+            }
             printf( "RX: %5d %4d %1d %4d %c\n", int(sample.time_ps), int(sample.iq_mv), sample.bits, 
                     int(sample.margin), above_noise ? '+' : '-' );
         }
         double pct = double(above_noise_cnt) / double(cnt) * 100.0;
         printf( "rx_offset=%d above noise: %d of %d samples (%0.2f%%)\n", rx_offset, above_noise_cnt, cnt, pct );
+        for( uint32_t i = 0; i < 16; i++ ) 
+        {
+            if ( val_cnt[i] > 0 ) {
+                double val_pct = double(val_above_noise_cnt[i]) / double(val_cnt[i]) * 100.0;
+                printf( "    %1d: above noise: %d of %d samples (%0.2f%%)\n", i, val_above_noise_cnt[i], val_cnt[i], val_pct );
+            } 
+        }
         if ( pct > best_pct ) {
             best_rx_offset = rx_offset;
             best_pct       = pct;
