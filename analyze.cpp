@@ -241,6 +241,18 @@ int main( int argc, const char * argv[] )
     }
 
     //------------------------------------------------------------------
+    // Print all RX samples.
+    //------------------------------------------------------------------
+    for( size_t i = 0; i < rx_samples.size(); i++ )
+    {
+        const Sample& sample = rx_samples[i];
+        bool above_noise = sample.margin > NOISE_mV_MAX;
+        printf( "RX: %5d %4d %1d %4d %c\n", int(sample.time_ps), int(sample.iq_mv), sample.bits, 
+                int(sample.margin), above_noise ? '+' : '-' );
+    }
+    printf( "------------------------------------------------------------------------------\n" );
+
+    //------------------------------------------------------------------
     // Choose bits from RX samples.
     //------------------------------------------------------------------
     const uint32_t rx_stride = RX_CLK_GHZ / TX_CLK_GHZ;
@@ -261,12 +273,12 @@ int main( int argc, const char * argv[] )
                     int(sample.margin), above_noise ? '+' : '-' );
         }
         double pct = double(above_noise_cnt) / double(cnt) * 100.0;
-        printf( "rx_offset=%d above noise: %d of %d samples (%6.2f%%)\n", rx_offset, above_noise_cnt, cnt, pct );
+        printf( "rx_offset=%d above noise: %d of %d samples (%0.2f%%)\n", rx_offset, above_noise_cnt, cnt, pct );
         if ( pct > best_pct ) {
             best_rx_offset = rx_offset;
             best_pct       = pct;
         }
     }
-    printf( "\nrx_offset=%d had best above-noise percentage of %6.2f%%\n", best_rx_offset, best_pct );
+    printf( "\nrx_offset=%d had best above-noise percentage of %0.2f%%\n", best_rx_offset, best_pct );
     return 0;
 }
