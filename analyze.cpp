@@ -172,7 +172,17 @@ int main( int argc, const char * argv[] )
 
     //------------------------------------------------------------------
     // Sample iq_tx and iq_rx values at their periods.
+    // Write the samples to new lists.
     //------------------------------------------------------------------
+    struct Sample
+    {
+        double time_ps;
+        double iq_mv;
+        double margin;
+        int    bits;
+    };
+    std::vector<Sample> tx_samples;
+    std::vector<Sample> rx_samples;
     Entry entry_prev{ -1, -TX_CLK_PERIOD_PS, RX_mV_MAX, 0.0 };
     Entry entry;
     double iq_tx_time_ps = 0.0;
@@ -194,7 +204,15 @@ int main( int argc, const char * argv[] )
             double   margin;
             uint32_t bits = pam4( iq_tx, margin );
             bool above_noise = margin > NOISE_mV_MAX;
-            printf( "TX: %5d %4d %1d %4d %c\n", int(entry.time_ps), int(iq_tx), bits, int(margin), above_noise ? '+' : '-' );
+            //printf( "TX: %5d %4d %1d %4d %c\n", int(entry.time_ps), int(iq_tx), bits, int(margin), above_noise ? '+' : '-' );
+
+            size_t si = tx_samples.size();
+            tx_samples.resize( si+1 );
+            Sample& sample = tx_samples[si];
+            sample.time_ps = iq_tx_time_ps;
+            sample.iq_mv   = iq_tx;
+            sample.margin  = margin;
+            sample.bits    = bits;
         }
 
         // iq_rx
@@ -208,7 +226,15 @@ int main( int argc, const char * argv[] )
             double   margin;
             uint32_t bits = pam4( iq_rx, margin );
             bool above_noise = margin > NOISE_mV_MAX;
-            printf( "RX: %5d %4d %1d %4d %c\n", int(entry.time_ps), int(iq_rx), bits, int(margin), above_noise ? '+' : '-' );
+            //printf( "RX: %5d %4d %1d %4d %c\n", int(entry.time_ps), int(iq_rx), bits, int(margin), above_noise ? '+' : '-' );
+
+            size_t si = rx_samples.size();
+            rx_samples.resize( si+1 );
+            Sample& sample = rx_samples[si];
+            sample.time_ps = iq_rx_time_ps;
+            sample.iq_mv   = iq_rx;
+            sample.margin  = margin;
+            sample.bits    = bits;
         }
 
         entry_prev = entry;
