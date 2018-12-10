@@ -280,5 +280,21 @@ int main( int argc, const char * argv[] )
         }
     }
     printf( "\nrx_offset=%d had best above-noise percentage of %0.2f%%\n", best_rx_offset, best_pct );
+    printf( "------------------------------------------------------------------------------\n" );
+
+    //------------------------------------------------------------------
+    // Show all RX samples with chosen ones.
+    //------------------------------------------------------------------
+    uint32_t next_chosen = best_rx_offset;
+    for( size_t i = 0; i < rx_samples.size(); i++ )
+    {
+        const Sample& sample = rx_samples[i];
+        bool above_noise = sample.margin > NOISE_mV_MAX;
+        bool is_chosen = i == next_chosen;
+        if ( is_chosen ) next_chosen += rx_stride;
+        printf( "RX: %5d %4d %1d %4d %c %s\n", int(sample.time_ps), int(sample.iq_mv), sample.bits, 
+                int(sample.margin), above_noise ? '+' : '-', is_chosen ? "<===" : "" );
+    }
+
     return 0;
 }
