@@ -294,12 +294,19 @@ int main( int argc, const char * argv[] )
                     int bits = pam4( sample.iq_mv, margin, hi_lo_adjust );
                     val_cnt[bits]++;
                     bool above_noise = margin > NOISE_mV_MAX;
-                    if ( above_noise ) {
+                    bool prev_above_noise = false;
+                    if ( rx_stride > 1 && i != 0 ) {
+                        const Sample& prev_sample = rx_samples[i-1];
+                        double prev_margin;
+                        int prev_bits = pam4( prev_sample.iq_mv, prev_margin, hi_lo_adjust );
+                        prev_above_noise = prev_bits == bits && prev_margin > NOISE_mV_MAX;
+                    }
+                    if ( above_noise || prev_above_noise ) {
                         above_noise_cnt++;
                         val_above_noise_cnt[bits]++;
                     }
                     printf( "RX: %5d %4d %1d %4d %c\n", int(sample.time_ps), int(sample.iq_mv), bits, 
-                            int(margin), above_noise ? '+' : '-' );
+                            int(margin), above_noise ? '+' : prev_above_noise ? '^' : '-' );
                 }
                 double pct = double(above_noise_cnt) / double(cnt) * 100.0;
                 printf( "rx_stride=%d hi_lo_adjust=%0.2f rx_offset=%d above noise: %d of %d samples (%0.2f%%)\n", 
@@ -318,15 +325,14 @@ int main( int argc, const char * argv[] )
                     best_rx_offset    = rx_offset;
                 }
             }
-            printf( "\nrx_stride=%d hi_lo_adjust=%0.2f rx_offset=%d had best above-noise percentage of %0.2f%%\n", 
-                    rx_stride, best_hi_lo_adjust, best_rx_offset, best_pct );
-            printf( "--------------------------------------------------------------------------------------\n" );
         }
 
         //------------------------------------------------------------------
         // Show all RX samples with chosen Vts and rx_offsets.
         //------------------------------------------------------------------
         uint32_t next_chosen = best_rx_offset;
+        int  prev_bits = 0;
+        bool prev_above_noise = false;
         for( size_t i = 0; i < rx_samples.size(); i++ )
         {
             const Sample& sample = rx_samples[i];
@@ -336,7 +342,11 @@ int main( int argc, const char * argv[] )
             bool is_chosen = i == next_chosen;
             if ( is_chosen ) next_chosen += rx_stride;
             printf( "RX: %5d %4d %1d %4d %c %s\n", int(sample.time_ps), int(sample.iq_mv), bits, 
-                    int(margin), above_noise ? '+' : '-', is_chosen ? "<===" : "" );
+                    int(margin), 
+                    above_noise ? '+' : (is_chosen && prev_above_noise && prev_bits == bits) ? '^' : '-', 
+                    is_chosen ? "<===" : "" );
+            prev_bits = bits;
+            prev_above_noise = above_noise;
         }
 
         printf( "\nrx_stride=%d hi_lo_adjust=%0.2f rx_offset=%d had best above-noise percentage of %0.2f%%\n", 
