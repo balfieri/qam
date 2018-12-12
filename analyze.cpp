@@ -104,7 +104,7 @@ double lerp( double f1, const double f2, const double a )
 int pam4( double mV, double& margin, double hi_lo_adjust=0.0 )
 {
     double vt_high = Vt_HIGH - hi_lo_adjust;
-    double vt_low  = Vt_LOW  - hi_lo_adjust;
+    double vt_low  = Vt_LOW  + hi_lo_adjust;
     double vt_mid  = Vt_MID;
     if ( mV > vt_high ) {
         margin = mV - vt_high;
@@ -256,86 +256,93 @@ int main( int argc, const char * argv[] )
     printf( "------------------------------------------------------------------------------\n" );
 
     //------------------------------------------------------------------
-    // Try various Vt_HIGH/Vt_LOW.
-    // Assume that we'll never want to make Vt_HIGH higher (or Vt_LOW lower).
+    // Get answers for rx_stride=1 vs. normal.
     //------------------------------------------------------------------
-    const uint32_t rx_stride = RX_CLK_GHZ / TX_CLK_GHZ;
-    double   best_pct = 0.0;
-    double   best_hi_lo_adjust = 0.0;
-    uint32_t best_rx_offset = 0;
-    for( double hi_lo_adjust = 0.0; hi_lo_adjust <= Vt_HIGH/4; hi_lo_adjust += 1.0 )
+    for( uint32_t stride_i = 0; stride_i < 2; stride_i++ )
     {
+        const uint32_t rx_stride = (stride_i == 0) ? 1 : (RX_CLK_GHZ / TX_CLK_GHZ);
+
+        double   best_pct = 0.0;
+        double   best_hi_lo_adjust = 0.0;
+        uint32_t best_rx_offset = 0;
+
         //------------------------------------------------------------------
-        // Try various RX time offsets.
+        // Try various Vt_HIGH/Vt_LOW.
+        // Assume that we'll never want to make Vt_HIGH higher (or Vt_LOW lower).
         //------------------------------------------------------------------
-        for( uint32_t rx_offset = 0; rx_offset < rx_stride; rx_offset++ )
+        for( double hi_lo_adjust = 0.0; hi_lo_adjust <= Vt_HIGH/4; hi_lo_adjust += 1.0 )
         {
-            printf( "\nrx_offset=%d\n", rx_offset );
-            uint32_t cnt = 0;
-            uint32_t above_noise_cnt = 0;
-            uint32_t val_cnt[16];
-            uint32_t val_above_noise_cnt[16];
-            for( uint32_t i = 0; i < 16; i++ ) 
+            //------------------------------------------------------------------
+            // Try various RX time offsets.
+            //------------------------------------------------------------------
+            for( uint32_t rx_offset = 0; rx_offset < rx_stride; rx_offset++ )
             {
-                val_cnt[i] = 0;
-                val_above_noise_cnt[i] = 0;
-            }
-            for( size_t i = rx_offset; i < rx_samples.size(); i += rx_stride )
-            {
-                cnt++;
-                const Sample& sample = rx_samples[i];
-                double margin;
-                int bits = pam4( sample.iq_mv, margin, hi_lo_adjust );
-                val_cnt[bits]++;
-                bool above_noise = sample.margin > NOISE_mV_MAX;
-                if ( above_noise ) {
-                    above_noise_cnt++;
-                    val_above_noise_cnt[bits]++;
+                uint32_t cnt = 0;
+                uint32_t above_noise_cnt = 0;
+                uint32_t val_cnt[16];
+                uint32_t val_above_noise_cnt[16];
+                for( uint32_t i = 0; i < 16; i++ ) 
+                {
+                    val_cnt[i] = 0;
+                    val_above_noise_cnt[i] = 0;
                 }
-                printf( "RX: %5d %4d %1d %4d %c\n", int(sample.time_ps), int(sample.iq_mv), bits, 
-                        int(margin), above_noise ? '+' : '-' );
+                for( size_t i = rx_offset; i < rx_samples.size(); i += rx_stride )
+                {
+                    cnt++;
+                    const Sample& sample = rx_samples[i];
+                    double margin;
+                    int bits = pam4( sample.iq_mv, margin, hi_lo_adjust );
+                    val_cnt[bits]++;
+                    bool above_noise = margin > NOISE_mV_MAX;
+                    if ( above_noise ) {
+                        above_noise_cnt++;
+                        val_above_noise_cnt[bits]++;
+                    }
+                    printf( "RX: %5d %4d %1d %4d %c\n", int(sample.time_ps), int(sample.iq_mv), bits, 
+                            int(margin), above_noise ? '+' : '-' );
+                }
+                double pct = double(above_noise_cnt) / double(cnt) * 100.0;
+                printf( "rx_stride=%d hi_lo_adjust=%0.2f rx_offset=%d above noise: %d of %d samples (%0.2f%%)\n", 
+                        rx_stride, hi_lo_adjust, rx_offset, above_noise_cnt, cnt, pct );
+                for( uint32_t i = 0; i < 16; i++ ) 
+                {
+                    if ( val_cnt[i] > 0 ) {
+                        double val_pct = double(val_above_noise_cnt[i]) / double(val_cnt[i]) * 100.0;
+                        printf( "    %1d: above noise: %d of %d samples (%0.2f%%)\n", 
+                                i, val_above_noise_cnt[i], val_cnt[i], val_pct );
+                    } 
+                }
+                if ( pct > best_pct ) {
+                    best_pct          = pct;
+                    best_hi_lo_adjust = hi_lo_adjust;
+                    best_rx_offset    = rx_offset;
+                }
             }
-            double pct = double(above_noise_cnt) / double(cnt) * 100.0;
-            printf( "hi_lo_adjust=%0.2f rx_offset=%d above noise: %d of %d samples (%0.2f%%)\n", 
-                    hi_lo_adjust, rx_offset, above_noise_cnt, cnt, pct );
-            for( uint32_t i = 0; i < 16; i++ ) 
-            {
-                if ( val_cnt[i] > 0 ) {
-                    double val_pct = double(val_above_noise_cnt[i]) / double(val_cnt[i]) * 100.0;
-                    printf( "    %1d: above noise: %d of %d samples (%0.2f%%)\n", 
-                            i, val_above_noise_cnt[i], val_cnt[i], val_pct );
-                } 
-            }
-            if ( pct > best_pct ) {
-                best_pct          = pct;
-                best_hi_lo_adjust = hi_lo_adjust;
-                best_rx_offset    = rx_offset;
-            }
+            printf( "\nrx_stride=%d hi_lo_adjust=%0.2f rx_offset=%d had best above-noise percentage of %0.2f%%\n", 
+                    rx_stride, best_hi_lo_adjust, best_rx_offset, best_pct );
+            printf( "--------------------------------------------------------------------------------------\n" );
         }
-    }
-    printf( "\nhi_lo_adjust=%0.2f rx_offset=%d had best above-noise percentage of %0.2f%%\n", 
-            best_hi_lo_adjust, best_rx_offset, best_pct );
-    printf( "--------------------------------------------------------------------------------------\n" );
 
-    //------------------------------------------------------------------
-    // Show all RX samples with chosen Vts and rx_offsets.
-    //------------------------------------------------------------------
-    uint32_t next_chosen = best_rx_offset;
-    for( size_t i = 0; i < rx_samples.size(); i++ )
-    {
-        const Sample& sample = rx_samples[i];
-        double margin;
-        int bits = pam4( sample.iq_mv, margin, best_hi_lo_adjust );
-        bool above_noise = margin > NOISE_mV_MAX;
-        bool is_chosen = i == next_chosen;
-        if ( is_chosen ) next_chosen += rx_stride;
-        printf( "RX: %5d %4d %1d %4d %c %s\n", int(sample.time_ps), int(sample.iq_mv), bits, 
-                int(margin), above_noise ? '+' : '-', is_chosen ? "<===" : "" );
-    }
+        //------------------------------------------------------------------
+        // Show all RX samples with chosen Vts and rx_offsets.
+        //------------------------------------------------------------------
+        uint32_t next_chosen = best_rx_offset;
+        for( size_t i = 0; i < rx_samples.size(); i++ )
+        {
+            const Sample& sample = rx_samples[i];
+            double margin;
+            int bits = pam4( sample.iq_mv, margin, best_hi_lo_adjust );
+            bool above_noise = margin > NOISE_mV_MAX;
+            bool is_chosen = i == next_chosen;
+            if ( is_chosen ) next_chosen += rx_stride;
+            printf( "RX: %5d %4d %1d %4d %c %s\n", int(sample.time_ps), int(sample.iq_mv), bits, 
+                    int(margin), above_noise ? '+' : '-', is_chosen ? "<===" : "" );
+        }
 
-    printf( "\nhi_lo_adjust=%0.2f rx_offset=%d had best above-noise percentage of %0.2f%%\n", 
-            best_hi_lo_adjust, best_rx_offset, best_pct );
-    printf( "------------------------------------------------------------------------------\n" );
+        printf( "\nrx_stride=%d hi_lo_adjust=%0.2f rx_offset=%d had best above-noise percentage of %0.2f%%\n", 
+                rx_stride, best_hi_lo_adjust, best_rx_offset, best_pct );
+        printf( "------------------------------------------------------------------------------\n" );
+    }
 
     return 0;
 }
