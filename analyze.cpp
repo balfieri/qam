@@ -296,7 +296,7 @@ int main( int argc, const char * argv[] )
                 //------------------------------------------------------------------
                 // Try various RX time offsets.
                 //------------------------------------------------------------------
-                int  prev_chosen_bits = 0;
+                int  prev_chosen_bits = 1;
                 for( uint32_t rx_offset = 0; rx_offset < rx_stride; rx_offset++ )
                 {
                     uint32_t cnt = 0;
@@ -310,12 +310,13 @@ int main( int argc, const char * argv[] )
                     }
                     for( size_t i = rx_offset; i < rx_samples.size(); i += rx_stride )
                     {
-                        if ( i != rx_offset ) cnt++;            // don't count start-up
+                        bool ignore = i == rx_offset || i == (rx_offset+rx_stride);
+                        if ( !ignore ) cnt++;            // don't count start-up
                         const Sample& sample = rx_samples[i];
                         double vt;
                         double margin;
                         int bits = pam4( sample.iq_mv, vt, margin, static_hi_lo_adjust, prev_chosen_bits, dynamic_hi_lo_adjust );
-                        if ( i != rx_offset ) val_cnt[bits]++;  // don't count start-up
+                        if ( !ignore ) val_cnt[bits]++;  // don't count start-up
                         bool above_noise = margin > NOISE_mV_MAX;
                         bool prev_above_noise = false;
                         if ( rx_stride > 1 && i != 0 ) {
@@ -325,12 +326,12 @@ int main( int argc, const char * argv[] )
                             int prev_bits = pam4( prev_sample.iq_mv, prev_vt, prev_margin, static_hi_lo_adjust, prev_chosen_bits, dynamic_hi_lo_adjust );
                             prev_above_noise = prev_bits == bits && prev_margin > NOISE_mV_MAX;
                         }
-                        if ( above_noise || prev_above_noise ) {
+                        if ( !ignore && (above_noise || prev_above_noise) ) {
                             above_noise_cnt++;
                             val_above_noise_cnt[bits]++;
                         }
                         printf( "RX: %5d %4d %1d %5d %4d %c\n", int(sample.time_ps), int(sample.iq_mv), bits, 
-                                int(vt), int(margin), above_noise ? '+' : prev_above_noise ? '^' : '-' );
+                                int(vt), int(margin), ignore ? 'x' : above_noise ? '+' : prev_above_noise ? '^' : '-' );
                         prev_chosen_bits = bits;
                     }
                     double pct = double(above_noise_cnt) / double(cnt) * 100.0;
@@ -368,13 +369,14 @@ int main( int argc, const char * argv[] )
             double vt;
             double margin;
             int bits = pam4( sample.iq_mv, vt, margin, best_static_hi_lo_adjust, prev_chosen_bits, best_dynamic_hi_lo_adjust );
+            bool ignore    = i <= (best_rx_offset+rx_stride);
             bool is_chosen = i == next_chosen;
             bool above_noise = margin > NOISE_mV_MAX;
             if ( is_chosen ) next_chosen += rx_stride;
             printf( "RX: %5d %4d %1d %5d %4d %c %s\n", int(sample.time_ps), int(sample.iq_mv), bits, 
                     int(vt), int(margin), 
-                    above_noise ? '+' : (is_chosen && prev_above_noise && prev_bits == bits) ? '^' : '-', 
-                    is_chosen ? "<===" : "" );
+                    ignore ? 'x' : above_noise ? '+' : (is_chosen && prev_above_noise && prev_bits == bits) ? '^' : '-', 
+                    ignore ? "(ignored)" : is_chosen ? "<===" : "" );
             if ( is_chosen ) prev_chosen_bits = bits;
             prev_bits = bits;
             prev_above_noise = above_noise;
