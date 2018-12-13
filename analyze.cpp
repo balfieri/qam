@@ -34,10 +34,10 @@ static constexpr bool     debug              = false;
 
 // config constants
 static constexpr uint32_t VLEVEL_CNT         = 4;   // number of voltage levels
-static constexpr double   TX_CLK_GHZ         = 20;  // TX clock rate 
+static constexpr double   TX_CLK_GHZ         = 20;  // TX symbol transfer rate 
 static constexpr double   RX_CLK_GHZ         = 100; // RX sample rate
 static constexpr double   TX_mV_MAX          = 400; // 200 mV max for Tx source
-static constexpr double   NOISE_mV_MAX       = 33;  // 32 mV max noise margin
+static constexpr double   NOISE_mV_MAX       = 33;  // 33 mV max noise (our margins must be above this)
 
 // derived constants
 static constexpr double   TX_CLK_PERIOD_PS   = 1000.0 / TX_CLK_GHZ;
