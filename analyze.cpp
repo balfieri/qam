@@ -101,23 +101,33 @@ double lerp( double f1, const double f2, const double a )
     return a*f1 + (1.0 - a)*f2;
 }
 
-int pam4( double mV, double& margin, double hi_lo_adjust=0.0, int prev_bits=0, double extreme_hi_lo_adjust=0.0 )
+int pam4( double mV, double& vt, double& margin, double hi_lo_adjust=0.0, int prev_bits=0, double extreme_hi_lo_adjust=0.0 )
 {
     double vt_high = Vt_HIGH - hi_lo_adjust - ((prev_bits <= 0) ? extreme_hi_lo_adjust : 0);
     double vt_mid  = Vt_MID;
     double vt_low  = Vt_LOW  + hi_lo_adjust + ((prev_bits >= 3) ? extreme_hi_lo_adjust : 0);
     if ( mV > vt_high ) {
+        vt     = vt_high;
         margin = mV - vt_high;
         return 0b11;
     } else if ( mV < vt_high && mV > vt_mid ) {
+        vt     = vt_mid;
         margin = mV - vt_mid;
-        if ( (vt_high-mV) < margin ) margin = vt_high-mV;
+        if ( (vt_high-mV) < margin ) {
+            vt     = vt_high;
+            margin = vt_high-mV;
+        }
         return 0b10;
     } else if ( mV > vt_low  && mV < vt_mid ) {
+        vt     = vt_low;
         margin = mV - vt_low;
-        if ( (vt_mid-mV) < margin ) margin = vt_mid-mV;
+        if ( (vt_mid-mV) < margin ) {
+            vt     = vt_mid;
+            margin = vt_mid-mV;
+        }
         return 0b01;
     } else {
+        vt     = vt_low;
         margin = vt_low - mV;
         return 0b00;
     }
@@ -204,10 +214,11 @@ int main( int argc, const char * argv[] )
             iq_tx_values.resize( vi+1 );
             iq_tx_values[vi] = iq_tx;
             iq_tx_time_ps += TX_CLK_PERIOD_PS;
+            double   vt;
             double   margin;
-            uint32_t bits = pam4( iq_tx, margin );
+            uint32_t bits = pam4( iq_tx, vt, margin );
             bool above_noise = margin > NOISE_mV_MAX;
-            printf( "TX: %5d %4d %1d %4d %c\n", int(entry.time_ps), int(iq_tx), bits, int(margin), above_noise ? '+' : '-' );
+            printf( "TX: %5d %4d %1d %5d %4d %c\n", int(entry.time_ps), int(iq_tx), bits, int(vt), int(margin), above_noise ? '+' : '-' );
 
             size_t si = tx_samples.size();
             tx_samples.resize( si+1 );
@@ -226,10 +237,11 @@ int main( int argc, const char * argv[] )
             iq_rx_values.resize( vi+1 );
             iq_rx_values[vi] = iq_rx;
             iq_rx_time_ps += RX_CLK_PERIOD_PS;
+            double   vt;
             double   margin;
-            uint32_t bits = pam4( iq_rx, margin );
+            uint32_t bits = pam4( iq_rx, vt, margin );
             bool above_noise = margin > NOISE_mV_MAX;
-            //printf( "RX: %5d %4d %1d %4d %c\n", int(entry.time_ps), int(iq_rx), bits, int(margin), above_noise ? '+' : '-' );
+            //printf( "RX: %5d %4d %1d %5d %4d %c\n", int(entry.time_ps), int(iq_rx), bits, int(vt), int(margin), above_noise ? '+' : '-' );
 
             size_t si = rx_samples.size();
             rx_samples.resize( si+1 );
@@ -295,25 +307,27 @@ int main( int argc, const char * argv[] )
                     }
                     for( size_t i = rx_offset; i < rx_samples.size(); i += rx_stride )
                     {
-                        cnt++;
+                        if ( i != rx_offset ) cnt++;            // don't count start-up
                         const Sample& sample = rx_samples[i];
+                        double vt;
                         double margin;
-                        int bits = pam4( sample.iq_mv, margin, hi_lo_adjust, prev_chosen_bits, extreme_hi_lo_adjust );
-                        val_cnt[bits]++;
+                        int bits = pam4( sample.iq_mv, vt, margin, hi_lo_adjust, prev_chosen_bits, extreme_hi_lo_adjust );
+                        if ( i != rx_offset ) val_cnt[bits]++;  // don't count start-up
                         bool above_noise = margin > NOISE_mV_MAX;
                         bool prev_above_noise = false;
                         if ( rx_stride > 1 && i != 0 ) {
                             const Sample& prev_sample = rx_samples[i-1];
+                            double prev_vt;
                             double prev_margin;
-                            int prev_bits = pam4( prev_sample.iq_mv, prev_margin, hi_lo_adjust, prev_chosen_bits, extreme_hi_lo_adjust );
+                            int prev_bits = pam4( prev_sample.iq_mv, prev_vt, prev_margin, hi_lo_adjust, prev_chosen_bits, extreme_hi_lo_adjust );
                             prev_above_noise = prev_bits == bits && prev_margin > NOISE_mV_MAX;
                         }
                         if ( above_noise || prev_above_noise ) {
                             above_noise_cnt++;
                             val_above_noise_cnt[bits]++;
                         }
-                        printf( "RX: %5d %4d %1d %4d %c\n", int(sample.time_ps), int(sample.iq_mv), bits, 
-                                int(margin), above_noise ? '+' : prev_above_noise ? '^' : '-' );
+                        printf( "RX: %5d %4d %1d %5d %4d %c\n", int(sample.time_ps), int(sample.iq_mv), bits, 
+                                int(vt), int(margin), above_noise ? '+' : prev_above_noise ? '^' : '-' );
                         prev_chosen_bits = bits;
                     }
                     double pct = double(above_noise_cnt) / double(cnt) * 100.0;
@@ -348,13 +362,14 @@ int main( int argc, const char * argv[] )
         for( size_t i = 0; i < rx_samples.size(); i++ )
         {
             const Sample& sample = rx_samples[i];
+            double vt;
             double margin;
-            int bits = pam4( sample.iq_mv, margin, best_hi_lo_adjust, prev_chosen_bits, best_extreme_hi_lo_adjust );
+            int bits = pam4( sample.iq_mv, vt, margin, best_hi_lo_adjust, prev_chosen_bits, best_extreme_hi_lo_adjust );
             bool is_chosen = i == next_chosen;
             bool above_noise = margin > NOISE_mV_MAX;
             if ( is_chosen ) next_chosen += rx_stride;
-            printf( "RX: %5d %4d %1d %4d %c %s\n", int(sample.time_ps), int(sample.iq_mv), bits, 
-                    int(margin), 
+            printf( "RX: %5d %4d %1d %5d %4d %c %s\n", int(sample.time_ps), int(sample.iq_mv), bits, 
+                    int(vt), int(margin), 
                     above_noise ? '+' : (is_chosen && prev_above_noise && prev_bits == bits) ? '^' : '-', 
                     is_chosen ? "<===" : "" );
             if ( is_chosen ) prev_chosen_bits = bits;
