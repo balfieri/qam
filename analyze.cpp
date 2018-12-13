@@ -103,32 +103,34 @@ double lerp( double f1, const double f2, const double a )
 
 int pam4( double mV, double& vt, double& margin, double hi_lo_adjust=0.0, int prev_bits=0, double extreme_hi_lo_adjust=0.0 )
 {
-    double vt_high = Vt_HIGH - hi_lo_adjust - ((prev_bits <= 0) ? extreme_hi_lo_adjust : 0);
-    double vt_mid  = Vt_MID;
-    double vt_low  = Vt_LOW  + hi_lo_adjust + ((prev_bits >= 3) ? extreme_hi_lo_adjust : 0);
-    if ( mV > vt_high ) {
-        vt     = vt_high;
-        margin = mV - vt_high;
+    double vt_high_for_above = Vt_HIGH - hi_lo_adjust - ((prev_bits <= 1) ? extreme_hi_lo_adjust : 0);
+    double vt_high_for_below = Vt_HIGH - hi_lo_adjust;
+    double vt_mid            = Vt_MID;
+    double vt_low_for_above  = Vt_LOW  + hi_lo_adjust;
+    double vt_low_for_below  = Vt_LOW  + hi_lo_adjust + ((prev_bits >= 3) ? extreme_hi_lo_adjust : 0);
+    if ( mV > vt_high_for_above ) {
+        vt     = vt_high_for_above;
+        margin = mV - vt;
         return 0b11;
-    } else if ( mV < vt_high && mV > vt_mid ) {
+    } else if ( mV < vt_high_for_below && mV > vt_mid ) {
         vt     = vt_mid;
-        margin = mV - vt_mid;
-        if ( (vt_high-mV) < margin ) {
-            vt     = vt_high;
-            margin = vt_high-mV;
+        margin = mV - vt;
+        if ( (vt_high_for_below-mV) < margin ) {
+            vt     = vt_high_for_below;
+            margin = vt - mV;
         }
         return 0b10;
-    } else if ( mV > vt_low  && mV < vt_mid ) {
-        vt     = vt_low;
-        margin = mV - vt_low;
+    } else if ( mV > vt_low_for_above  && mV < vt_mid ) {
+        vt     = vt_low_for_above;
+        margin = mV - vt;
         if ( (vt_mid-mV) < margin ) {
             vt     = vt_mid;
-            margin = vt_mid-mV;
+            margin = vt - mV;
         }
         return 0b01;
     } else {
-        vt     = vt_low;
-        margin = vt_low - mV;
+        vt     = vt_low_for_below;
+        margin = vt - mV;
         return 0b00;
     }
 }
