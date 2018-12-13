@@ -101,13 +101,13 @@ double lerp( double f1, const double f2, const double a )
     return a*f1 + (1.0 - a)*f2;
 }
 
-int pam4( double mV, double& vt, double& margin, double hi_lo_adjust=0.0, int prev_bits=0, double extreme_hi_lo_adjust=0.0 )
+int pam4( double mV, double& vt, double& margin, double static_hi_lo_adjust=0.0, int prev_bits=0, double dynamic_hi_lo_adjust=0.0 )
 {
-    double vt_high_for_above = Vt_HIGH - hi_lo_adjust - ((prev_bits <= 1) ? extreme_hi_lo_adjust : 0);
-    double vt_high_for_below = Vt_HIGH - hi_lo_adjust;
+    double vt_high_for_above = Vt_HIGH - static_hi_lo_adjust - ((prev_bits <= 1) ? dynamic_hi_lo_adjust : 0);
+    double vt_high_for_below = Vt_HIGH - static_hi_lo_adjust;
     double vt_mid            = Vt_MID;
-    double vt_low_for_above  = Vt_LOW  + hi_lo_adjust;
-    double vt_low_for_below  = Vt_LOW  + hi_lo_adjust + ((prev_bits >= 2) ? extreme_hi_lo_adjust : 0);
+    double vt_low_for_above  = Vt_LOW  + static_hi_lo_adjust;
+    double vt_low_for_below  = Vt_LOW  + static_hi_lo_adjust + ((prev_bits >= 2) ? dynamic_hi_lo_adjust : 0);
     if ( mV > vt_high_for_above ) {
         vt     = vt_high_for_above;
         margin = mV - vt;
@@ -277,20 +277,20 @@ int main( int argc, const char * argv[] )
         const uint32_t rx_stride = (stride_i == 0) ? 1 : (RX_CLK_GHZ / TX_CLK_GHZ);
 
         double   best_pct = 0.0;
-        double   best_hi_lo_adjust = 0.0;
-        double   best_extreme_hi_lo_adjust = 0.0;
+        double   best_static_hi_lo_adjust = 0.0;
+        double   best_dynamic_hi_lo_adjust = 0.0;
         uint32_t best_rx_offset = 0;
 
         //------------------------------------------------------------------
         // Try various Vt_HIGH/Vt_LOW.
         // Assume that we'll never want to make Vt_HIGH higher (or Vt_LOW lower).
         //------------------------------------------------------------------
-        for( double hi_lo_adjust = 0.0; hi_lo_adjust <= Vt_HIGH/4; hi_lo_adjust += 1.0 )
+        for( double static_hi_lo_adjust = 0.0; static_hi_lo_adjust <= Vt_HIGH/4; static_hi_lo_adjust += 1.0 )
         {
             //------------------------------------------------------------------
             // Try various Vt_HIGH/Vt_LOW adjustments when coming from extreme bits values.
             //------------------------------------------------------------------
-            for( double extreme_hi_lo_adjust = 0.0; extreme_hi_lo_adjust <= Vt_HIGH/4; extreme_hi_lo_adjust += 1.0 )
+            for( double dynamic_hi_lo_adjust = 0.0; dynamic_hi_lo_adjust <= Vt_HIGH/4; dynamic_hi_lo_adjust += 1.0 )
             {
                 //------------------------------------------------------------------
                 // Try various RX time offsets.
@@ -313,7 +313,7 @@ int main( int argc, const char * argv[] )
                         const Sample& sample = rx_samples[i];
                         double vt;
                         double margin;
-                        int bits = pam4( sample.iq_mv, vt, margin, hi_lo_adjust, prev_chosen_bits, extreme_hi_lo_adjust );
+                        int bits = pam4( sample.iq_mv, vt, margin, static_hi_lo_adjust, prev_chosen_bits, dynamic_hi_lo_adjust );
                         if ( i != rx_offset ) val_cnt[bits]++;  // don't count start-up
                         bool above_noise = margin > NOISE_mV_MAX;
                         bool prev_above_noise = false;
@@ -321,7 +321,7 @@ int main( int argc, const char * argv[] )
                             const Sample& prev_sample = rx_samples[i-1];
                             double prev_vt;
                             double prev_margin;
-                            int prev_bits = pam4( prev_sample.iq_mv, prev_vt, prev_margin, hi_lo_adjust, prev_chosen_bits, extreme_hi_lo_adjust );
+                            int prev_bits = pam4( prev_sample.iq_mv, prev_vt, prev_margin, static_hi_lo_adjust, prev_chosen_bits, dynamic_hi_lo_adjust );
                             prev_above_noise = prev_bits == bits && prev_margin > NOISE_mV_MAX;
                         }
                         if ( above_noise || prev_above_noise ) {
@@ -333,8 +333,8 @@ int main( int argc, const char * argv[] )
                         prev_chosen_bits = bits;
                     }
                     double pct = double(above_noise_cnt) / double(cnt) * 100.0;
-                    printf( "rx_stride=%d hi_lo_adjust=%0.2f extreme_hi_lo_adjust=%0.2f rx_offset=%d above noise: %d of %d samples (%0.2f%%)\n", 
-                            rx_stride, hi_lo_adjust, extreme_hi_lo_adjust, rx_offset, above_noise_cnt, cnt, pct );
+                    printf( "rx_stride=%d static_hi_lo_adjust=%0.2f dynamic_hi_lo_adjust=%0.2f rx_offset=%d above noise: %d of %d samples (%0.2f%%)\n", 
+                            rx_stride, static_hi_lo_adjust, dynamic_hi_lo_adjust, rx_offset, above_noise_cnt, cnt, pct );
                     for( uint32_t i = 0; i < 16; i++ ) 
                     {
                         if ( val_cnt[i] > 0 ) {
@@ -346,8 +346,8 @@ int main( int argc, const char * argv[] )
                     if ( pct > best_pct ) {
                         printf( "   NEW BEST!\n" );
                         best_pct                  = pct;
-                        best_hi_lo_adjust         = hi_lo_adjust;
-                        best_extreme_hi_lo_adjust = extreme_hi_lo_adjust;
+                        best_static_hi_lo_adjust  = static_hi_lo_adjust;
+                        best_dynamic_hi_lo_adjust = dynamic_hi_lo_adjust;
                         best_rx_offset            = rx_offset;
                     }
                 }
@@ -366,7 +366,7 @@ int main( int argc, const char * argv[] )
             const Sample& sample = rx_samples[i];
             double vt;
             double margin;
-            int bits = pam4( sample.iq_mv, vt, margin, best_hi_lo_adjust, prev_chosen_bits, best_extreme_hi_lo_adjust );
+            int bits = pam4( sample.iq_mv, vt, margin, best_static_hi_lo_adjust, prev_chosen_bits, best_dynamic_hi_lo_adjust );
             bool is_chosen = i == next_chosen;
             bool above_noise = margin > NOISE_mV_MAX;
             if ( is_chosen ) next_chosen += rx_stride;
@@ -379,8 +379,8 @@ int main( int argc, const char * argv[] )
             prev_above_noise = above_noise;
         }
 
-        printf( "\nrx_stride=%d hi_lo_adjust=%0.2f extreme_hi_lo_adjust=%0.2f rx_offset=%d had best above-noise percentage of %0.2f%%\n", 
-                rx_stride, best_hi_lo_adjust, best_extreme_hi_lo_adjust, best_rx_offset, best_pct );
+        printf( "\nrx_stride=%d static_hi_lo_adjust=%0.2f dynamic_hi_lo_adjust=%0.2f rx_offset=%d had best above-noise percentage of %0.2f%%\n", 
+                rx_stride, best_static_hi_lo_adjust, best_dynamic_hi_lo_adjust, best_rx_offset, best_pct );
     }
 
     return 0;
