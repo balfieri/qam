@@ -107,7 +107,7 @@ int pam4( double mV, double& vt, double& margin, double hi_lo_adjust=0.0, int pr
     double vt_high_for_below = Vt_HIGH - hi_lo_adjust;
     double vt_mid            = Vt_MID;
     double vt_low_for_above  = Vt_LOW  + hi_lo_adjust;
-    double vt_low_for_below  = Vt_LOW  + hi_lo_adjust + ((prev_bits >= 3) ? extreme_hi_lo_adjust : 0);
+    double vt_low_for_below  = Vt_LOW  + hi_lo_adjust + ((prev_bits >= 2) ? extreme_hi_lo_adjust : 0);
     if ( mV > vt_high_for_above ) {
         vt     = vt_high_for_above;
         margin = mV - vt;
