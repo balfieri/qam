@@ -103,9 +103,9 @@ double lerp( double f1, const double f2, const double a )
 
 int pam4( double mV, double& margin, double hi_lo_adjust=0.0, int prev_bits=0, double extreme_hi_lo_adjust=0.0 )
 {
-    double vt_high = Vt_HIGH - hi_lo_adjust - ((prev_bits == 0) ? extreme_hi_lo_adjust : 0);
-    double vt_low  = Vt_LOW  + hi_lo_adjust + ((prev_bits == 3) ? extreme_hi_lo_adjust : 0);
+    double vt_high = Vt_HIGH - hi_lo_adjust - ((prev_bits <= 0) ? extreme_hi_lo_adjust : 0);
     double vt_mid  = Vt_MID;
+    double vt_low  = Vt_LOW  + hi_lo_adjust + ((prev_bits >= 3) ? extreme_hi_lo_adjust : 0);
     if ( mV > vt_high ) {
         margin = mV - vt_high;
         return 0b11;
