@@ -103,12 +103,12 @@ double lerp( double f1, const double f2, const double a )
 
 int pam4( double mV, double& vt, double& margin, double static_hi_lo_adjust=0.0, int prev_bits=0, double dynamic_hi_lo_adjust=0.0 )
 {
-    double vt_high_for_above = Vt_HIGH - static_hi_lo_adjust - ((prev_bits <= 1) ? dynamic_hi_lo_adjust : 0);
+    double vt_high_for_above = Vt_HIGH - static_hi_lo_adjust - ((prev_bits <= 2) ? dynamic_hi_lo_adjust : 0);
     double vt_high_for_below = Vt_HIGH - static_hi_lo_adjust;
     double vt_mid_for_above  = Vt_MID                        - ((prev_bits <= 1) ? dynamic_hi_lo_adjust : 0);
     double vt_mid_for_below  = Vt_MID                        + ((prev_bits >= 2) ? dynamic_hi_lo_adjust : 0);
     double vt_low_for_above  = Vt_LOW  + static_hi_lo_adjust;
-    double vt_low_for_below  = Vt_LOW  + static_hi_lo_adjust + ((prev_bits >= 2) ? dynamic_hi_lo_adjust : 0);
+    double vt_low_for_below  = Vt_LOW  + static_hi_lo_adjust + ((prev_bits >= 1) ? dynamic_hi_lo_adjust : 0);
     if ( mV > vt_high_for_above ) {
         vt     = vt_high_for_above;
         margin = mV - vt;
