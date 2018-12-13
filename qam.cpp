@@ -31,8 +31,8 @@ static constexpr bool     debug              = false;
 
 // config constants
 static constexpr uint32_t N_SQRT             = 4;   // sqrt(N)
-static constexpr double   CLK_GHZ            = 10;  // 10 GHz
-static constexpr uint32_t CLK_TIMESTEP_CNT   = 50;  // per clock
+static constexpr double   CLK_GHZ            = 10;  // 10 GHz (half the actual symbol transmit speed)
+static constexpr uint32_t CLK_TIMESTEP_CNT   = 50;  // there are 2 timesteps per CLK_GHZ
 static constexpr uint32_t SIM_CLK_CNT        = 256;
 static constexpr double   mV_MAX             = 200; // 200 mV max per clock
 static constexpr bool     USE_SIN_COS        = false;
