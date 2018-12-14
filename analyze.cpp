@@ -221,7 +221,7 @@ int main( int argc, const char * argv[] )
             double   margin;
             uint32_t bits = pam4( iq_tx, vt, margin );
             bool above_noise = margin > NOISE_mV_MAX;
-            printf( "TX: %5d %4d %1d %5d %4d %c\n", int(entry.time_ps), int(iq_tx), bits, int(vt), int(margin), above_noise ? '+' : '-' );
+            if ( debug ) printf( "TX: %5d %4d %1d %5d %4d %c\n", int(entry.time_ps), int(iq_tx), bits, int(vt), int(margin), above_noise ? '+' : '-' );
 
             size_t si = tx_samples.size();
             tx_samples.resize( si+1 );
@@ -244,7 +244,7 @@ int main( int argc, const char * argv[] )
             double   margin;
             uint32_t bits = pam4( iq_rx, vt, margin );
             bool above_noise = margin > NOISE_mV_MAX;
-            //printf( "RX: %5d %4d %1d %5d %4d %c\n", int(entry.time_ps), int(iq_rx), bits, int(vt), int(margin), above_noise ? '+' : '-' );
+            if ( debug ) printf( "RX: %5d %4d %1d %5d %4d %c\n", int(entry.time_ps), int(iq_rx), bits, int(vt), int(margin), above_noise ? '+' : '-' );
 
             size_t si = rx_samples.size();
             rx_samples.resize( si+1 );
@@ -261,19 +261,21 @@ int main( int argc, const char * argv[] )
     //------------------------------------------------------------------
     // Print all RX samples.
     //------------------------------------------------------------------
-    for( size_t i = 0; i < rx_samples.size(); i++ )
-    {
-        const Sample& sample = rx_samples[i];
-        bool above_noise = sample.margin > NOISE_mV_MAX;
-        printf( "RX: %5d %4d %1d %4d %c\n", int(sample.time_ps), int(sample.iq_mv), sample.bits, 
-                int(sample.margin), above_noise ? '+' : '-' );
+    if ( debug ) {
+        for( size_t i = 0; i < rx_samples.size(); i++ )
+        {
+            const Sample& sample = rx_samples[i];
+            bool above_noise = sample.margin > NOISE_mV_MAX;
+            printf( "RX: %5d %4d %1d %4d %c\n", int(sample.time_ps), int(sample.iq_mv), sample.bits, 
+                    int(sample.margin), above_noise ? '+' : '-' );
+        }
+        printf( "------------------------------------------------------------------------------\n" );
     }
-    printf( "------------------------------------------------------------------------------\n" );
 
     //------------------------------------------------------------------
     // Get answers for rx_stride=1 vs. normal.
     //------------------------------------------------------------------
-    for( uint32_t stride_i = 0; stride_i < 2; stride_i++ )
+    for( uint32_t stride_i = 1; stride_i < 2; stride_i++ )
     {
         const uint32_t rx_stride = (stride_i == 0) ? 1 : (RX_CLK_GHZ / TX_CLK_GHZ);
 
@@ -330,23 +332,21 @@ int main( int argc, const char * argv[] )
                             above_noise_cnt++;
                             val_above_noise_cnt[bits]++;
                         }
-                        printf( "RX: %5d %4d %1d %5d %4d %c\n", int(sample.time_ps), int(sample.iq_mv), bits, 
-                                int(vt), int(margin), ignore ? 'x' : above_noise ? '+' : prev_above_noise ? '^' : '-' );
+                        if ( debug ) printf( "RX: %5d %4d %1d %5d %4d %c\n", int(sample.time_ps), int(sample.iq_mv), bits, 
+                                             int(vt), int(margin), ignore ? 'x' : above_noise ? '+' : prev_above_noise ? '^' : '-' );
                         prev_chosen_bits = bits;
                     }
                     double pct = double(above_noise_cnt) / double(cnt) * 100.0;
-                    printf( "rx_stride=%d static_hi_lo_adjust=%0.2f dynamic_hi_lo_adjust=%0.2f rx_offset=%d above noise: %d of %d samples (%0.2f%%)\n", 
-                            rx_stride, static_hi_lo_adjust, dynamic_hi_lo_adjust, rx_offset, above_noise_cnt, cnt, pct );
                     for( uint32_t i = 0; i < 16; i++ ) 
                     {
                         if ( val_cnt[i] > 0 ) {
                             double val_pct = double(val_above_noise_cnt[i]) / double(val_cnt[i]) * 100.0;
-                            printf( "    %1d: above noise: %d of %d samples (%0.2f%%)\n", 
-                                    i, val_above_noise_cnt[i], val_cnt[i], val_pct );
+                            if ( debug ) printf( "    %1d: above noise: %d of %d samples (%0.2f%%)\n", i, val_above_noise_cnt[i], val_cnt[i], val_pct );
                         } 
                     }
                     if ( pct > best_pct ) {
-                        printf( "   NEW BEST!\n" );
+                        printf( "NEW BEST: rx_stride=%d static_hi_lo_adjust=%0.2f dynamic_hi_lo_adjust=%0.2f rx_offset=%d above noise: %d of %d samples (%0.2f%%)\n", 
+                                rx_stride, static_hi_lo_adjust, dynamic_hi_lo_adjust, rx_offset, above_noise_cnt, cnt, pct );
                         best_pct                  = pct;
                         best_static_hi_lo_adjust  = static_hi_lo_adjust;
                         best_dynamic_hi_lo_adjust = dynamic_hi_lo_adjust;

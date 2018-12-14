@@ -14,9 +14,9 @@ my $sp_base     = shift @ARGV || $out_base . ".${line_len}";
 
 my $use_ngspice = int( $spice =~ /ngspice/ );
 
-my $I_s  = "VI   I_clk 0 DC 0.0 PWL ( 0p 0m";
-my $Q_s  = "VQ   Q_clk 0 DC 0.0 PWL ( 0p 0m";
-my $IQ_s = "VIQ IQ_clk 0 DC 0.0 PWL ( 0p 0m";
+my $I_s  = "VI   I_clk 0 DC 0.0 PWL ( 0p, 0m";
+my $Q_s  = "VQ   Q_clk 0 DC 0.0 PWL ( 0p, 0m";
+my $IQ_s = "VIQ IQ_clk 0 DC 0.0 PWL ( 0p, 0m";
 
 open( Q, "${out_base}.out" ) or die "ERROR: could not open ${out_base}.out for input\n";
 my $ts = 0.0;
@@ -35,9 +35,9 @@ while( <Q> )
         $Q *= 2.0;
         $IQ *= 2.0;
         $time += $ts;
-        $I_s  .= " ${time}p " . sprintf( "%6.4fm", $I );
-        $Q_s  .= " ${time}p " . sprintf( "%6.4fm", $Q );
-        $IQ_s .= " ${time}p " . sprintf( "%6.4fm", $IQ );
+        $I_s  .= "\n+ , ${time}p, " . sprintf( "%6.4fm", $I );
+        $Q_s  .= "\n+ , ${time}p, " . sprintf( "%6.4fm", $Q );
+        $IQ_s .= "\n+ , ${time}p, " . sprintf( "%6.4fm", $IQ );
     }
 }
 close( Q );
