@@ -33,7 +33,6 @@ static constexpr bool     debug              = false;
 static constexpr uint32_t N_SQRT             = 4;   // sqrt(N)
 static constexpr double   CLK_GHZ            = 10;  // 10 GHz (half the actual symbol transmit speed)
 static constexpr uint32_t CLK_TIMESTEP_CNT   = 50;  // there are 2 timesteps per CLK_GHZ
-static constexpr uint32_t SIM_CLK_CNT        = 2048;
 static constexpr double   mV_MAX             = 200; // 200 mV max per clock
 static constexpr bool     USE_SIN_COS        = false;
 static constexpr double   TRANS_START_FRAC   = 0.40; // fraction of half-clock where transition starts
@@ -61,11 +60,17 @@ static double y[N];
 
 // forward decls
 void choose_points( void );
-void sim( void );
+void sim( uint32_t clk_cnt );
 
 int main( int argc, const char * argv[] )
 {
-    sim();
+    uint32_t seed    = 0xb0b1cafe;
+    uint32_t clk_cnt = 256;
+    if ( argc >= 2 ) seed    = std::atoi( argv[1] );
+    if ( argc >= 3 ) clk_cnt = std::atoi( argv[2] );
+
+    srand( seed );
+    sim( clk_cnt );
     return 0;
 }
 
@@ -74,7 +79,7 @@ uint32_t rand_n( uint32_t n )
     return rand() % n;
 }
 
-void sim( void )
+void sim( uint32_t clk_cnt )
 {
     //------------------------------------------------------
     // For each clock cycle
@@ -89,7 +94,7 @@ void sim( void )
     double eye_width_ps_min = 1000000.0;
     double eye_width_ps_max = 0.0;
     double eye_width_ps_tot = 0.0;
-    for( uint32_t i = 0; i < SIM_CLK_CNT; i++ )
+    for( uint32_t i = 0; i < clk_cnt; i++ )
     {
         //------------------------------------------------------
         // Choose random bits from 0 .. N-1.
@@ -174,7 +179,7 @@ void sim( void )
         eye_width_ps_tot += eye_width_ps;
         Q_mag_prev = Q_mag;
     }
-    double eye_width_ps_avg = eye_width_ps_tot / double(SIM_CLK_CNT);
+    double eye_width_ps_avg = eye_width_ps_tot / double(clk_cnt);
     std::cout << "\neye_width min..max = " << eye_width_ps_min << " ps .. " << eye_width_ps_max << " ps\n";
     std::cout << "\neye_width avg      = " << eye_width_ps_avg << " ps\n";
 }

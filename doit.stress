@@ -1,0 +1,30 @@
+#!/usr/bin/perl -w
+#
+# doit.stress - crank up a lot of sims and analyze them when they are done
+#
+my $cnt      = shift @ARGV || 1;
+my $line_len = shift @ARGV || "10m";
+
+# make sure programs are built
+#
+system( "./doit.qam     0 1" )       == 0 or die "ERROR: qam build failed\n";
+system( "./doit.analyze 10m qam 1" ) == 0 or die "ERROR: analyze build failed\n";
+
+# launch them in parallel
+#
+for $i ( 0 .. $cnt-1 )
+{
+    my $seed   = int( 0xe7d37f87 + $i );
+    my $base   = "qam${i}";
+    my $basell = "${base}.${line_len}";
+    print "${basell} seed = ${seed}\n";
+    system( "rm -f ${base}.*" );
+    system( "./qam ${seed} >& ${base}.out" )             == 0 or die "ERROR: ./qam run failed\n";
+    system( "./out2sp ${line_len} ${base}" )             == 0 or die "ERROR: ./out2sp run failed\n";
+    system( "./analyze ${basell}.raw >& ${basell}.txt" ) == 0 or die "ERROR: ./analyze run failed\n";
+    system( "grep 'had best' ${basell}.txt" );           
+    system( "rm -f ${basell}.{raw,out,sp}" );
+}
+
+# wait for them to all finish
+#

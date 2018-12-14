@@ -4,9 +4,11 @@ use strict;
 use warnings;
 
 my $debug_level = shift @ARGV || 0;
+my $build_only  = shift @ARGV || 0;
 my $other_args  = join( " ", @ARGV );
 my $use_float   = 0;
 
+my $prog = "qam";
 my $opt = ($debug_level <= 0) ? "3" : "0";
 
 my $float_def = $use_float ? "-DFIXED_USE_FLOAT" : "";
@@ -15,12 +17,17 @@ my $CFLAGS = "-std=gnu++0x -Wextra -Wstrict-aliasing -pedantic -Werror -Wcast-al
 `uname` !~ /Darwin/ and $CFLAGS .= " -Wlogical-op -Wstrict-null-sentinel";
 `uname` =~ /Darwin/ and $CFLAGS .= " -Wno-unused-parameter -Wno-shift-negative-value -Wno-c++14-binary-literal -ferror-limit=10 -DNO_FMT_LLU";
 
-system( "rm -f qam.o qam" );
-system( "g++ -g -o qam.o ${CFLAGS} -c qam.cpp" ) == 0 or die "ERROR: compile failed\n";
-system( "g++ -g -o qam qam.o -lm" ) == 0 or die "ERROR: link failed\n";
-my $cmd = "./qam ${other_args}";
-print "$cmd\n";
-if ( system( $cmd ) != 0 ) {
-    die "ERROR: run failed\n";
+if ( !-f $prog || -M $prog >= -M "${prog}.cpp" ) {
+    print "Rebuilding...\n";
+    system( "rm -f ${prog}.o ${prog}" );
+    system( "g++ -g -o ${prog}.o ${CFLAGS} -c ${prog}.cpp" ) == 0 or die "ERROR: compile failed\n";
+    system( "g++ -g -o ${prog} ${prog}.o -lm" ) == 0 or die "ERROR: link failed\n";
+}
+if ( !$build_only ) {
+    my $cmd = "./${prog} ${other_args}";
+    print "$cmd\n";
+    if ( system( $cmd ) != 0 ) {
+        die "ERROR: run failed\n";
+    }
 }
 exit 0;
