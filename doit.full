@@ -1,9 +1,0 @@
-#!/usr/bin/perl -w
-#
-# doit.full - doit.qam, out2sp, doit.analyze
-#
-my $base     = shift @ARGV || "qam";
-my $seed     = shift @ARGV || 0xb0b1cafe;
-my $line_len = shift @ARGV || "10m";
-
-system( "./doit.qam 
