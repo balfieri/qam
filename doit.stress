@@ -23,7 +23,7 @@ for $i ( 0 .. $cnt-1 )
     system( "./out2sp ${line_len} ${base}" )             == 0 or die "ERROR: ./out2sp run failed\n";
     system( "./analyze ${basell}.raw >& ${basell}.txt" ) == 0 or die "ERROR: ./analyze run failed\n";
     system( "grep 'had best' ${basell}.txt" );           
-    system( "rm -f ${basell}.{raw,out,sp,eps}" );
+    $cnt > 1 and system( "rm -f ${basell}.{raw,out,sp,eps}" );
     $seed++;
 }
 
